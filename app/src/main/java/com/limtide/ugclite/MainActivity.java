@@ -42,9 +42,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
+        // 菜单按钮点击事件
+        binding.menuButton.setOnClickListener(v -> {
+            Log.d(TAG, "菜单按钮被点击");
+        });
+
+        // 搜索按钮点击事件
+        binding.searchButton.setOnClickListener(v -> {
+            Log.d(TAG, "搜索按钮被点击");
+        });
+
         // 拍摄按钮点击事件
         binding.captureButton.setOnClickListener(v -> {
-            // TODO: 实现拍摄功能
+            Log.d(TAG, "拍摄按钮被点击");
         });
 
         // 底部导航栏点击事件
@@ -52,7 +62,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupBottomNavigation() {
-        // 首页按钮点击
-        // TODO: 实现底部导航逻辑
+        // 首页标签点击
+        binding.homeTab.setOnClickListener(v -> {
+            Log.d(TAG, "首页标签被点击");
+        });
+
+        // 朋友标签点击
+        binding.friendsTab.setOnClickListener(v -> {
+            Log.d(TAG, "朋友标签被点击");
+        });
+
+        // 消息标签点击
+        binding.messageTab.setOnClickListener(v -> {
+            Log.d(TAG, "消息标签被点击");
+        });
+
+        // 我标签点击
+        binding.profileTab.setOnClickListener(v -> {
+            Log.d(TAG, "我标签被点击");
+        });
     }
 }
