@@ -138,14 +138,14 @@
         <item name="android:ellipsize">end</item>
         <item name="android:lineSpacingExtra">0dp</item>
     </style>
-
+    <!-- 用户头像样式 -->
     <style name="UserAvatarStyle">
         <item name="android:layout_width">16dp</item>
         <item name="android:layout_height">16dp</item>
         <item name="android:background">#E0E0E0</item>
         <item name="android:scaleType">centerCrop</item>
     </style>
-
+    <!-- 用户名样式 -->
     <style name="UserNameStyle">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
@@ -156,14 +156,14 @@
         <item name="android:maxLines">1</item>
         <item name="android:ellipsize">end</item>
     </style>
-
+    <!-- 点赞样式 -->
     <style name="LikeIconStyle">
         <item name="android:layout_width">16dp</item>
         <item name="android:layout_height">16dp</item>
         <item name="android:src">@drawable/ic_heart_outline</item>
         <item name="android:tint">#75161823</item>
     </style>
-
+    <!-- 点赞数量样式 -->
     <style name="LikeCountStyle">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
@@ -174,17 +174,4 @@
         <item name="android:maxLines">1</item>
     </style>
 
-    <style name="VideoDurationStyle">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:textSize">12sp</item>
-        <item name="android:textColor">#FFFFFF</item>
-        <item name="android:fontFamily">"sans-serif"</item>
-        <item name="android:background">#80000000</item>
-        <item name="android:paddingLeft">6dp</item>
-        <item name="android:paddingRight">6dp</item>
-        <item name="android:paddingTop">2dp</item>
-        <item name="android:paddingBottom">2dp</item>
-        <item name="android:singleLine">true</item>
-    </style>
 </resources>
