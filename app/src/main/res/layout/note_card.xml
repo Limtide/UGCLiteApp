@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="189dp"
+    android:layout_height="wrap_content"
+    android:layout_margin="2dp"
+    app:cardCornerRadius="4dp"
+    app:cardElevation="0dp"
+    app:cardBackgroundColor="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- 封面图片区域 -->
+        <FrameLayout
+            android:id="@+id/cover_container"
+            android:layout_width="189dp"
+            android:layout_height="252dp"
+            android:background="#F0F0F0">
+
+            <!-- 封面图 -->
+            <ImageView
+                android:id="@+id/cover_image"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:contentDescription="封面" />
+        </FrameLayout>
+
+        <!-- 内容信息区域 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="82dp"
+            android:orientation="vertical"
+            android:padding="8dp"
+            android:background="#FFFFFF">
+
+            <!-- 标题文本 -->
+            <TextView
+                android:id="@+id/video_title"
+                style="@style/VideoTitleStyle"
+                android:layout_width="173dp"
+                android:layout_height="40dp"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+            <!-- 用户信息和点赞区域 -->
+            <LinearLayout
+                android:layout_width="173dp"
+                android:layout_height="20dp"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:weightSum="1">
+
+                <!-- 用户头像和名称 -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="16dp"
+                    android:layout_weight="1"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginEnd="4dp">
+
+                    <!-- 用户头像 -->
+                    <ImageView
+                        android:id="@+id/user_avatar"
+                        style="@style/UserAvatarStyle"
+                        android:layout_marginEnd="4dp" />
+
+                    <!-- 用户名 -->
+                    <TextView
+                        android:id="@+id/user_name"
+                        style="@style/UserNameStyle" />
+
+                </LinearLayout>
+
+                <!-- 点赞 -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="17dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginStart="4dp">
+
+                    <!-- 点赞图标 -->
+                    <ImageView
+                        android:id="@+id/like_icon"
+                        style="@style/LikeIconStyle"
+                        android:layout_marginEnd="2dp" />
+
+                    <!-- 点赞数量 -->
+                    <TextView
+                        android:id="@+id/like_count"
+                        style="@style/LikeCountStyle" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>
