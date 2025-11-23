@@ -105,9 +105,4 @@ public class HomeFragment extends Fragment {
         Log.d(TAG,"HomeFragment is onDetach");
     }
 
-    private void hideEmptyState() {
-        if (emptyStateLayout != null) {
-            emptyStateLayout.setVisibility(View.GONE);
-        }
-    }
 }
