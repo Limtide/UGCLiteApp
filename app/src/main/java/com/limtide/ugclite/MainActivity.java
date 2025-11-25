@@ -70,6 +70,9 @@ public class MainActivity extends AppCompatActivity {
         // 设置点击事件监听器
         setupClickListeners();
 
+        // 默认选中社区Tab
+        binding.tabLayout.getTabAt(3).select();
+
         // 默认显示首页
         showFragment(TabState.HOME);
     }
@@ -132,8 +135,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showFragment(TabState tabState) {
-        Log.d(TAG, "tabState:"+String.valueOf(tabState));
-        Log.d(TAG, "currentTab:"+String.valueOf(currentTab));
+        Log.d(TAG, "tabState:" + String.valueOf(tabState));
+        Log.d(TAG, "currentTab:" + String.valueOf(currentTab));
+
         if (currentTab == tabState) {
             Toast.makeText(this, "已经是当前页面，不需要切换", Toast.LENGTH_SHORT).show();
             return; // 已经是当前页面，不需要切换
@@ -174,28 +178,18 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
 
-        //更新Fragment部分
+        // 使用 replace 方式切换 Fragment
         if (targetFragment != null) {
             FragmentTransaction transaction = fragmentManager.beginTransaction();
-
-            // 如果有当前Fragment，隐藏它
-            if (currentFragment != null) {
-                transaction.hide(currentFragment);
-            }
-
-            // 如果目标Fragment已经添加过，显示它；否则添加它
-            if (targetFragment.isAdded()) {
-                transaction.show(targetFragment);
-            } else {
-                transaction.add(R.id.fragment_container, targetFragment);
-            }
+            transaction.replace(R.id.fragment_container, targetFragment);
+            transaction.commit();
 
             currentFragment = targetFragment;
             currentTab = tabState;
-            transaction.commit();
         }
     }
 
+  
     private void updateTabStyle(View tabView, boolean isActive) {
         if (tabView instanceof TextView) {
             TextView textView = (TextView) tabView;
