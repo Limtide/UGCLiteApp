@@ -638,7 +638,7 @@ public class PostDetailActivity extends AppCompatActivity {
         if (binding.shareButton != null) {
             binding.shareButton.setOnClickListener(v -> {
                 Log.d(TAG, "Share button clicked");
-                // 只响应点击，不执行任何操作
+                handleShareClick();
             });
         }
     }
@@ -692,6 +692,79 @@ public class PostDetailActivity extends AppCompatActivity {
                   ", TotalFollowedUsers: " + followManager.getAllFollowedUsers().size());
 
         Toast.makeText(this, isFollowing ? "已关注" : "取消关注", Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * 处理分享点击
+     */
+    private void handleShareClick() {
+        if (currentPost == null) {
+            Log.w(TAG, "Cannot share: currentPost is null");
+            return;
+        }
+
+        try {
+            // 构建分享内容
+            String shareText = buildShareText();
+
+            // 创建分享Intent
+            Intent shareIntent = new Intent(Intent.ACTION_SEND);
+            shareIntent.setType("text/plain");
+            shareIntent.putExtra(Intent.EXTRA_TEXT, shareText);
+            shareIntent.putExtra(Intent.EXTRA_SUBJECT, currentPost.title != null ? currentPost.title : "分享内容");
+
+            // 启动分享选择器
+            startActivity(Intent.createChooser(shareIntent, "分享作品"));
+
+            Log.d(TAG, "Share initiated for post: " + currentPost.title);
+            Toast.makeText(this, "分享成功", Toast.LENGTH_SHORT).show();
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error sharing post: " + e.getMessage(), e);
+            Toast.makeText(this, "分享失败", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * 构建分享文本内容
+     */
+    private String buildShareText() {
+        StringBuilder shareText = new StringBuilder();
+
+        // 添加标题
+        if (currentPost.title != null && !currentPost.title.trim().isEmpty()) {
+            shareText.append(currentPost.title).append("\n\n");
+        }
+
+        // 添加正文内容
+        if (currentPost.content != null && !currentPost.content.trim().isEmpty()) {
+            shareText.append(currentPost.content);
+        }
+
+        // 添加作者信息
+        if (currentPost.author != null && currentPost.author.nickname != null) {
+            shareText.append("\n\n— 作者: ").append(currentPost.author.nickname);
+        }
+
+        // 添加话题标签
+        if (currentPost.hashtags != null && !currentPost.hashtags.isEmpty() && currentPost.content != null) {
+            shareText.append("\n");
+            for (Post.Hashtag hashtag : currentPost.hashtags) {
+                try {
+                    // 从content中根据位置提取话题标签文本
+                    if (hashtag.start >= 0 && hashtag.end <= currentPost.content.length() && hashtag.start < hashtag.end) {
+                        String tagText = currentPost.content.substring(hashtag.start, hashtag.end);
+                        if (tagText != null && !tagText.trim().isEmpty()) {
+                            shareText.append(" ").append(tagText); // 话题标签本身就包含#号
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG, "Error extracting hashtag text: " + e.getMessage());
+                }
+            }
+        }
+
+        return shareText.toString();
     }
 
     /**
