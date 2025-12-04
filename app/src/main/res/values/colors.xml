@@ -20,6 +20,7 @@
     <color name="primary_blue">#FF2196F3</color>
     <color name="holo_blue_dark">#FF0099CC</color>
     <color name="holo_blue_light">#FF33B5E5</color>
+    <color name="holo_red_light">#FFfe2c55</color>
     <color name="light_gray">#FFF5F5F5</color>
     <color name="medium_gray">#FF9E9E9E</color>
     <color name="dark_gray">#FF666666</color>

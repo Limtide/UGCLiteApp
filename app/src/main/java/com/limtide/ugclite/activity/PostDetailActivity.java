@@ -31,6 +31,7 @@ import com.limtide.ugclite.adapter.MediaPagerAdapter;
 import com.limtide.ugclite.data.model.Post;
 import com.limtide.ugclite.databinding.ActivityPostDetailBinding;
 import com.limtide.ugclite.utils.LikeManager;
+import com.limtide.ugclite.utils.FollowManager;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -63,6 +64,9 @@ public class PostDetailActivity extends AppCompatActivity {
     // 点赞管理器
     private LikeManager likeManager;
 
+    // 关注管理器
+    private FollowManager followManager;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -85,6 +89,9 @@ public class PostDetailActivity extends AppCompatActivity {
             // 初始化点赞管理器
             likeManager = LikeManager.getInstance(this);
 
+            // 初始化关注管理器
+            followManager = FollowManager.getInstance(this);
+
             // 初始化界面
             initViews();
             setupClickListeners();
@@ -92,6 +99,9 @@ public class PostDetailActivity extends AppCompatActivity {
 
             // 初始化点赞状态
             initLikeStatus();
+
+            // 初始化关注状态
+            initFollowStatus();
 
             Log.d(TAG, "PostDetailActivity created for: " + currentPost.title);
         } catch (Exception e) {
@@ -117,6 +127,24 @@ public class PostDetailActivity extends AppCompatActivity {
 
         Log.d(TAG, "初始化点赞状态 - PostId: " + currentPost.postId +
                   ", IsLiked: " + isLiked);
+    }
+
+    /**
+     * 初始化关注状态
+     */
+    private void initFollowStatus() {
+        if (currentPost == null || currentPost.author == null || followManager == null) {
+            return;
+        }
+
+        // 从FollowManager获取关注状态
+        isFollowing = followManager.isUserFollowed(currentPost.author.userId);
+
+        // 更新UI显示
+        updateFollowButton();
+
+        Log.d(TAG, "初始化关注状态 - UserId: " + currentPost.author.userId +
+                  ", IsFollowing: " + isFollowing);
     }
 
     /**
@@ -228,7 +256,7 @@ public class PostDetailActivity extends AppCompatActivity {
             }
 
             // 设置关注按钮状态和文本
-//            updateFollowButton();
+            // updateFollowButton(); // 移到initFollowStatus中统一调用
         } catch (Exception e) {
             Log.e(TAG, "Error in setupTopNavigation: " + e.getMessage(), e);
         }
@@ -492,12 +520,19 @@ public class PostDetailActivity extends AppCompatActivity {
     /**
      * 更新关注按钮状态
      */
-  private void updateFollowButton() {
+    private void updateFollowButton() {
         if (binding.follow != null) {
             binding.follow.setText(isFollowing ? "已关注" : "关注");
-            binding.follow.setBackgroundColor(isFollowing ?
-                    ContextCompat.getColor(this, R.color.darker_gray) :
-                    ContextCompat.getColor(this, R.color.holo_blue_dark));
+
+            if (isFollowing) {
+                // 已关注状态：灰色文字，灰色边框
+                binding.follow.setTextColor(ContextCompat.getColor(this, android.R.color.darker_gray));
+                binding.follow.setBackgroundResource(R.drawable.follow_button_gray_border);
+            } else {
+                // 未关注状态：红色文字，红色边框
+                binding.follow.setTextColor(ContextCompat.getColor(this, R.color.holo_red_light));
+                binding.follow.setBackgroundResource(R.drawable.follow_button_red_border);
+            }
         }
     }
 
@@ -563,6 +598,14 @@ public class PostDetailActivity extends AppCompatActivity {
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
 
+        // 关注按钮点击事件
+        if (binding.follow != null) {
+            binding.follow.setOnClickListener(v -> {
+                Log.d(TAG, "follow button clicked");
+                handleFollowClick();
+            });
+        }
+
         // 快捷评论框
         if (binding.quickCommentEdit != null) {
             binding.quickCommentEdit.setOnClickListener(v -> {
@@ -621,6 +664,34 @@ public class PostDetailActivity extends AppCompatActivity {
                   ", TotalLikedPosts: " + likeManager.getAllLikedPosts().size());
 
         Toast.makeText(this, isLiked ? "已点赞" : "取消点赞", Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * 处理关注点击
+     */
+    private void handleFollowClick() {
+        if (currentPost == null || currentPost.author == null || followManager == null) {
+            return;
+        }
+
+        String userId = currentPost.author.userId;
+        if (userId == null || userId.trim().isEmpty()) {
+            Log.w(TAG, "User ID is null or empty, cannot follow");
+            return;
+        }
+
+        // 使用FollowManager切换关注状态
+        boolean newFollowStatus = followManager.toggleFollow(userId);
+        isFollowing = newFollowStatus;
+
+        // 更新UI显示
+        updateFollowButton();
+
+        Log.d(TAG, "Follow clicked - UserId: " + userId +
+                  ", NewStatus: " + newFollowStatus +
+                  ", TotalFollowedUsers: " + followManager.getAllFollowedUsers().size());
+
+        Toast.makeText(this, isFollowing ? "已关注" : "取消关注", Toast.LENGTH_SHORT).show();
     }
 
     /**

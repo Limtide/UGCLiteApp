@@ -90,7 +90,7 @@
         <item name="android:gravity">center</item>
         <item name="android:textSize">17sp</item>
         <item name="android:fontFamily">"PingFang SC"</item>
-        <item name="android:textStyle">normal</item>
+        <item name="android:textStyle">bold</item>
         <item name="android:textColor">#99161823</item>
     </style>
 
@@ -102,9 +102,10 @@
         <item name="android:gravity">center</item>
         <item name="android:textSize">17sp</item>
         <item name="android:fontFamily">"PingFang SC"</item>
-        <item name="android:textStyle">normal</item>
+        <item name="android:textStyle">bold</item>
         <item name="android:textColor">#161823</item>
     </style>
+
 
     <!-- 拍摄按钮样式 -->
     <style name="CaptureButtonStyle">
@@ -253,10 +254,11 @@
     </style>
     <!-- 关注样式 -->
     <style name="FollowStyle">
-        <item name="android:layout_width">32dp</item>
-        <item name="android:layout_height">22dp</item>
-        <item name="android:textSize">14dp</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">28dp</item>
+        <item name="android:textSize">14sp</item>
         <item name="android:textColor">#fe2c55</item>
         <item name="android:fontFamily">"sans-serif"</item>
+        <item name="android:minWidth">60dp</item>
     </style>
 </resources>

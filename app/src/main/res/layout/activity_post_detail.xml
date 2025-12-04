@@ -56,7 +56,13 @@
         <TextView
             android:id="@+id/follow"
             style="@style/FollowStyle"
-            android:text="关注" />
+            android:text="关注"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:background="@drawable/follow_button_red_border" />
 
     </LinearLayout>
     <androidx.core.widget.NestedScrollView
@@ -94,7 +100,7 @@
                     android:layout_height="28dp"
                     android:layout_gravity="bottom|end"
                     android:layout_marginEnd="16dp"
-                    android:layout_marginBottom="16dp"
+                    android:layout_marginBottom="40dp"
                     android:src="@drawable/ic_speaker_background"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:clickable="true"
@@ -107,7 +113,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="6dp"
                     android:layout_gravity="bottom"
-                    android:layout_marginBottom="24dp"
+                    android:layout_marginBottom="12dp"
                     android:layout_marginStart="8dp"
                     android:layout_marginEnd="8dp"
                     android:visibility="gone"
