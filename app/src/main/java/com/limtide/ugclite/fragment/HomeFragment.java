@@ -10,12 +10,14 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import java.io.Serializable;
+import java.lang.ref.WeakReference;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.limtide.ugclite.activity.PostDetailActivity;
 import com.limtide.ugclite.adapter.NoteCardAdapater;
@@ -116,85 +118,14 @@ public class HomeFragment extends Fragment {
             Log.d(TAG, "恢复RecyclerView滚动状态");
         }
 
-        // 添加滚动监听器实现上拉加载更多
-        binding.recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
-                super.onScrollStateChanged(recyclerView, newState);
-                // 当滚动停止时检查是否需要加载更多
-                if (newState == RecyclerView.SCROLL_STATE_IDLE && !isLoading && hasMoreData) {
-                    checkLoadMore();
-                }
-            }
-
-            @Override
-            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
-                super.onScrolled(recyclerView, dx, dy);
-                // 只有在向下滚动时才检查
-                if (dy > 0 && !isLoading && hasMoreData) {
-                    checkLoadMore();
-                }
-            }
-        });
+        // 添加滚动监听器实现上拉加载更多 - 使用WeakReference避免内存泄漏
+        binding.recyclerView.addOnScrollListener(new SafeScrollListener(this));
 
         Log.d(TAG, "RecyclerView setup complete, adapter: " + (notecardAdapater != null ? "not null" : "null"));
 
-        // 设置点击事件
+        // 设置点击事件 - 使用SafeItemClickListener避免内存泄漏
         Log.d(TAG, "Setting onItemClickListener on notecardAdapater");
-        notecardAdapater.setOnItemClickListener(new NoteCardAdapater.OnItemClickListener() {
-            @Override
-            public void onItemClick(Post post, int position) {
-                Log.d(TAG, "onItemClick triggered! Post: " + post.title + ", position: " + position);
-
-                try {
-                    // 跳转到详情页面
-                    Intent intent = new Intent(requireActivity(), PostDetailActivity.class);
-                    intent.putExtra("post", (Serializable) post); // 明确转换为Serializable
-
-                    // 获取点击的卡片视图
-                    RecyclerView.ViewHolder viewHolder = binding.recyclerView.findViewHolderForAdapterPosition(position);
-                    View coverImage = null;
-                    if (viewHolder != null) {
-                        // 获取封面图片视图
-                        NoteCardAdapater.ViewHolder noteViewHolder = (NoteCardAdapater.ViewHolder) viewHolder;
-                        coverImage = noteViewHolder.getBinding().coverImage;
-                    }
-
-                    // 保存当前滚动位置
-                    StaggeredGridLayoutManager layoutManager = (StaggeredGridLayoutManager) binding.recyclerView.getLayoutManager();
-                    if (layoutManager != null) {
-                        int[] positions = layoutManager.findFirstVisibleItemPositions(null);
-                        if (positions != null && positions.length > 0) {
-                            savedFirstVisiblePosition = positions[0];
-                            Log.d(TAG, "保存当前位置: " + savedFirstVisiblePosition);
-                        }
-                    }
-
-                    // 创建共享元素转场动画
-                    if (coverImage != null) {
-                        android.app.ActivityOptions options = android.app.ActivityOptions
-                                .makeSceneTransitionAnimation(requireActivity(),
-                                    android.util.Pair.create(coverImage, "cover_image_transition"));
-                        startActivity(intent, options.toBundle());
-                    } else {
-                        // 如果找不到封面图片，使用普通跳转
-                        startActivity(intent);
-                    }
-
-                    Log.d(TAG, "Successfully started PostDetailActivity with transition");
-                } catch (Exception e) {
-                    Log.e(TAG, "Error starting PostDetailActivity: " + e.getMessage(), e);
-                    // 发生错误时使用普通跳转
-                    try {
-                        Intent intent = new Intent(requireActivity(), PostDetailActivity.class);
-                        intent.putExtra("post", (Serializable) post);
-                        startActivity(intent);
-                    } catch (Exception fallbackError) {
-                        Log.e(TAG, "Fallback navigation failed: " + fallbackError.getMessage(), fallbackError);
-                    }
-                }
-            }
-        });
+        notecardAdapater.setOnItemClickListener(new SafeItemClickListener(this));
 
         // 初始化ApiService
         apiService = ApiService.getInstance();
@@ -226,11 +157,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupRefreshListener() {
-        binding.swipeRefreshLayout.setOnRefreshListener(() -> {
-            Log.d(TAG, "下拉刷新被触发");
-            // 刷新数据
-            refreshFeedData();
-        });
+        binding.swipeRefreshLayout.setOnRefreshListener(new SafeRefreshListener(this));
     }
 
     /**
@@ -274,58 +201,8 @@ public class HomeFragment extends Fragment {
 
         Log.d(TAG, "开始加载Feed数据，数量: " + PAGE_SIZE + ", 支持视频: false");
 
-        // 调用API获取数据（第一页，cursor=0）
-        apiService.getFeedData(PAGE_SIZE, false, currentCursor, new ApiService.FeedCallback() {
-            @Override
-            public void onSuccess(List<Post> posts, boolean hasMore) {
-                Log.d(TAG, "API调用成功，获取到 " + (posts != null ? posts.size() : 0) + " 条数据");
-
-                // 切换到主线程更新UI
-                if (getContext() != null) {
-                    requireActivity().runOnUiThread(() -> {
-                        isLoading = false;
-                        hasMoreData = hasMore;
-
-                        if (notecardAdapater != null) {
-                            if (posts != null && !posts.isEmpty()) {
-                                // 过滤掉只有音频类型（如MP3）的帖子，只保留图片和视频
-                                List<Post> filteredPosts = filterPosts(posts);
-                                notecardAdapater.setPosts(filteredPosts);
-                                hideEmptyState();
-                                Log.d(TAG, "过滤后数据已加载到瀑布流适配器，原始数据: " + posts.size() + "，过滤后: " + filteredPosts.size());
-
-                                // 更新cursor为下一页的起始位置
-                                currentCursor += filteredPosts.size();
-                            } else {
-                                showEmptyState();
-                                Log.d(TAG, "没有数据，显示空状态");
-                            }
-                        }
-
-                        // 隐藏加载状态
-                        hideLoadingState();
-                    });
-                }
-            }
-
-            @Override
-            public void onError(String errorMessage) {
-                Log.e(TAG, "API调用失败: " + errorMessage);
-
-                // 切换到主线程更新UI
-                if (getContext() != null) {
-                    requireActivity().runOnUiThread(() -> {
-                        isLoading = false;
-
-                        // 显示错误信息
-                        showErrorState(errorMessage);
-
-                        // 隐藏加载状态
-                        hideLoadingState();
-                    });
-                }
-            }
-        });
+        // 调用API获取数据（第一页，cursor=0）- 使用SafeFeedCallback避免内存泄漏
+        apiService.getFeedData(PAGE_SIZE, false, currentCursor, new SafeFeedCallback(this, false));
     }
 
     /**
@@ -349,48 +226,8 @@ public class HomeFragment extends Fragment {
         isLoading = true;
         Log.d(TAG, "开始加载更多Feed数据，cursor: " + currentCursor + ", 数量: " + PAGE_SIZE);
 
-        // 调用API获取更多数据
-        apiService.getFeedData(PAGE_SIZE, false, currentCursor, new ApiService.FeedCallback() {
-            @Override
-            public void onSuccess(List<Post> posts, boolean hasMore) {
-                Log.d(TAG, "加载更多API调用成功，获取到 " + (posts != null ? posts.size() : 0) + " 条数据");
-
-                // 切换到主线程更新UI
-                if (getContext() != null) {
-                    requireActivity().runOnUiThread(() -> {
-                        isLoading = false;
-                        hasMoreData = hasMore;
-
-                        if (notecardAdapater != null) {
-                            if (posts != null && !posts.isEmpty()) {
-                                // 过滤掉只有音频类型（如MP3）的帖子，只保留图片和视频
-                                List<Post> filteredPosts = filterPosts(posts);
-                                notecardAdapater.addPosts(filteredPosts);
-                                Log.d(TAG, "加载更多过滤后数据已添加，原始数据: " + posts.size() + "，过滤后: " + filteredPosts.size());
-
-                                // 更新cursor为下一页的起始位置
-                                currentCursor += filteredPosts.size();
-                            } else {
-                                Log.d(TAG, "加载更多没有新数据");
-                            }
-                        }
-                    });
-                }
-            }
-
-            @Override
-            public void onError(String errorMessage) {
-                Log.e(TAG, "加载更多API调用失败: " + errorMessage);
-
-                // 切换到主线程更新UI
-                if (getContext() != null) {
-                    requireActivity().runOnUiThread(() -> {
-                        isLoading = false;
-                        Log.e(TAG, "加载更多失败: " + errorMessage);
-                    });
-                }
-            }
-        });
+        // 调用API获取更多数据 - 使用SafeFeedCallback避免内存泄漏
+        apiService.getFeedData(PAGE_SIZE, false, currentCursor, new SafeFeedCallback(this, true));
     }
 
     /**
@@ -610,6 +447,228 @@ public class HomeFragment extends Fragment {
         // 从PostDetailActivity返回时，刷新点赞状态
         if (notecardAdapater != null && notecardAdapater.getItemCount() > 0) {
             refreshVisibleLikeStatus();
+        }
+    }
+
+    /**
+     * 安全的RecyclerView滚动监听器 - 使用WeakReference避免内存泄漏
+     */
+    private static class SafeScrollListener extends RecyclerView.OnScrollListener {
+        private final WeakReference<HomeFragment> fragmentRef;
+
+        SafeScrollListener(HomeFragment fragment) {
+            this.fragmentRef = new WeakReference<>(fragment);
+        }
+
+        @Override
+        public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+            super.onScrollStateChanged(recyclerView, newState);
+            HomeFragment fragment = fragmentRef.get();
+            if (fragment == null || fragment.isDetached()) {
+                return;
+            }
+
+            // 当滚动停止时检查是否需要加载更多
+            if (newState == RecyclerView.SCROLL_STATE_IDLE && !fragment.isLoading && fragment.hasMoreData) {
+                fragment.checkLoadMore();
+            }
+        }
+
+        @Override
+        public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+            super.onScrolled(recyclerView, dx, dy);
+            HomeFragment fragment = fragmentRef.get();
+            if (fragment == null || fragment.isDetached()) {
+                return;
+            }
+
+            // 只有在向下滚动时才检查
+            if (dy > 0 && !fragment.isLoading && fragment.hasMoreData) {
+                fragment.checkLoadMore();
+            }
+        }
+    }
+
+    /**
+     * 安全的Feed回调 - 使用WeakReference避免内存泄漏
+     */
+    private static class SafeFeedCallback implements ApiService.FeedCallback {
+        private final WeakReference<HomeFragment> fragmentRef;
+        private final boolean isLoadMore;
+
+        SafeFeedCallback(HomeFragment fragment, boolean isLoadMore) {
+            this.fragmentRef = new WeakReference<>(fragment);
+            this.isLoadMore = isLoadMore;
+        }
+
+        @Override
+        public void onSuccess(List<Post> posts, boolean hasMore) {
+            HomeFragment fragment = fragmentRef.get();
+            if (fragment == null || fragment.isDetached() || fragment.getContext() == null) {
+                return;
+            }
+
+            Log.d(fragment.TAG, "API调用成功，获取到 " + (posts != null ? posts.size() : 0) + " 条数据");
+
+            // 切换到主线程更新UI
+            fragment.requireActivity().runOnUiThread(() -> {
+                try {
+                    fragment.isLoading = false;
+                    fragment.hasMoreData = hasMore;
+
+                    if (fragment.notecardAdapater != null) {
+                        if (posts != null && !posts.isEmpty()) {
+                            // 过滤掉只有音频类型（如MP3）的帖子，只保留图片和视频
+                            List<Post> filteredPosts = fragment.filterPosts(posts);
+
+                            if (isLoadMore) {
+                                fragment.notecardAdapater.addPosts(filteredPosts);
+                                Log.d(fragment.TAG, "加载更多过滤后数据已添加，原始数据: " + posts.size() + "，过滤后: " + filteredPosts.size());
+                            } else {
+                                fragment.notecardAdapater.setPosts(filteredPosts);
+                                fragment.hideEmptyState();
+                                Log.d(fragment.TAG, "过滤后数据已加载到瀑布流适配器，原始数据: " + posts.size() + "，过滤后: " + filteredPosts.size());
+                            }
+
+                            // 更新cursor为下一页的起始位置
+                            fragment.currentCursor += filteredPosts.size();
+                        } else {
+                            if (!isLoadMore) {
+                                fragment.showEmptyState();
+                                Log.d(fragment.TAG, "没有数据，显示空状态");
+                            } else {
+                                Log.d(fragment.TAG, "加载更多没有新数据");
+                            }
+                        }
+                    }
+
+                    // 隐藏加载状态
+                    fragment.hideLoadingState();
+                } catch (Exception e) {
+                    Log.e(fragment.TAG, "更新UI时发生异常", e);
+                }
+            });
+        }
+
+        @Override
+        public void onError(String errorMessage) {
+            HomeFragment fragment = fragmentRef.get();
+            if (fragment == null || fragment.isDetached() || fragment.getContext() == null) {
+                return;
+            }
+
+            Log.e(fragment.TAG, "API调用失败: " + errorMessage);
+
+            // 切换到主线程更新UI
+            fragment.requireActivity().runOnUiThread(() -> {
+                try {
+                    fragment.isLoading = false;
+
+                    if (!isLoadMore) {
+                        // 显示错误信息
+                        fragment.showErrorState(errorMessage);
+                    } else {
+                        Log.e(fragment.TAG, "加载更多失败: " + errorMessage);
+                    }
+
+                    // 隐藏加载状态
+                    fragment.hideLoadingState();
+                } catch (Exception e) {
+                    Log.e(fragment.TAG, "处理错误回调时发生异常", e);
+                }
+            });
+        }
+    }
+
+    /**
+     * 安全的点击监听器 - 使用WeakReference避免内存泄漏
+     */
+    private static class SafeItemClickListener implements NoteCardAdapater.OnItemClickListener {
+        private final WeakReference<HomeFragment> fragmentRef;
+
+        SafeItemClickListener(HomeFragment fragment) {
+            this.fragmentRef = new WeakReference<>(fragment);
+        }
+
+        @Override
+        public void onItemClick(Post post, int position) {
+            HomeFragment fragment = fragmentRef.get();
+            if (fragment == null || fragment.isDetached() || fragment.getContext() == null) {
+                return;
+            }
+
+            Log.d(fragment.TAG, "onItemClick triggered! Post: " + post.title + ", position: " + position);
+
+            try {
+                // 跳转到详情页面
+                Intent intent = new Intent(fragment.requireActivity(), PostDetailActivity.class);
+                intent.putExtra("post", (Serializable) post); // 明确转换为Serializable
+
+                // 获取点击的卡片视图
+                RecyclerView.ViewHolder viewHolder = fragment.binding.recyclerView.findViewHolderForAdapterPosition(position);
+                View coverImage = null;
+                if (viewHolder != null) {
+                    // 获取封面图片视图
+                    NoteCardAdapater.ViewHolder noteViewHolder = (NoteCardAdapater.ViewHolder) viewHolder;
+                    coverImage = noteViewHolder.getBinding().coverImage;
+                }
+
+                // 保存当前滚动位置
+                StaggeredGridLayoutManager layoutManager = (StaggeredGridLayoutManager) fragment.binding.recyclerView.getLayoutManager();
+                if (layoutManager != null) {
+                    int[] positions = layoutManager.findFirstVisibleItemPositions(null);
+                    if (positions != null && positions.length > 0) {
+                        fragment.savedFirstVisiblePosition = positions[0];
+                        Log.d(fragment.TAG, "保存当前位置: " + fragment.savedFirstVisiblePosition);
+                    }
+                }
+
+                // 创建共享元素转场动画
+                if (coverImage != null) {
+                    android.app.ActivityOptions options = android.app.ActivityOptions
+                            .makeSceneTransitionAnimation(fragment.requireActivity(),
+                                android.util.Pair.create(coverImage, "cover_image_transition"));
+                    fragment.startActivity(intent, options.toBundle());
+                } else {
+                    // 如果找不到封面图片，使用普通跳转
+                    fragment.startActivity(intent);
+                }
+
+                Log.d(fragment.TAG, "Successfully started PostDetailActivity with transition");
+            } catch (Exception e) {
+                Log.e(fragment.TAG, "Error starting PostDetailActivity: " + e.getMessage(), e);
+                // 发生错误时使用普通跳转
+                try {
+                    Intent intent = new Intent(fragment.requireActivity(), PostDetailActivity.class);
+                    intent.putExtra("post", (Serializable) post);
+                    fragment.startActivity(intent);
+                } catch (Exception fallbackError) {
+                    Log.e(fragment.TAG, "Fallback navigation failed: " + fallbackError.getMessage(), fallbackError);
+                }
+            }
+        }
+    }
+
+    /**
+     * 安全的刷新监听器 - 使用WeakReference避免内存泄漏
+     */
+    private static class SafeRefreshListener implements SwipeRefreshLayout.OnRefreshListener {
+        private final WeakReference<HomeFragment> fragmentRef;
+
+        SafeRefreshListener(HomeFragment fragment) {
+            this.fragmentRef = new WeakReference<>(fragment);
+        }
+
+        @Override
+        public void onRefresh() {
+            HomeFragment fragment = fragmentRef.get();
+            if (fragment == null || fragment.isDetached()) {
+                return;
+            }
+
+            Log.d(fragment.TAG, "下拉刷新被触发");
+            // 刷新数据
+            fragment.refreshFeedData();
         }
     }
 
