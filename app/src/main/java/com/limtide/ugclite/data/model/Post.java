@@ -71,13 +71,19 @@ public class Post implements Parcelable, Serializable {
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(postId);
-        dest.writeString(title);
-        dest.writeString(content);
+        // 安全写入String字段，null值会自动处理
+        dest.writeString(postId != null ? postId : "");
+        dest.writeString(title != null ? title : "");
+        dest.writeString(content != null ? content : "");
         dest.writeLong(createTime);
+
+        // 安全写入Parcelable字段
         dest.writeParcelable(author, flags);
+
+        // 安全写入List字段 - writeTypedList会处理null情况
         dest.writeTypedList(hashtags);
         dest.writeTypedList(clips);
+
         dest.writeParcelable(music, flags);
     }
 
@@ -87,8 +93,11 @@ public class Post implements Parcelable, Serializable {
         content = in.readString();
         createTime = in.readLong();
         author = in.readParcelable(Author.class.getClassLoader());
+
+        // 安全读取List字段 - createTypedArrayList会处理null情况
         hashtags = in.createTypedArrayList(Hashtag.CREATOR);
         clips = in.createTypedArrayList(Clip.CREATOR);
+
         music = in.readParcelable(Music.class.getClassLoader());
     }
 
