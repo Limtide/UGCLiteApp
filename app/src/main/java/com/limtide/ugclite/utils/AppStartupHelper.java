@@ -4,6 +4,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
+import com.limtide.ugclite.ui.activity.LoginActivity;
+import com.limtide.ugclite.ui.activity.MainActivity;
+
 /**
  * 应用启动辅助类 - 处理启动流程和自动登录
  * 职责：
@@ -108,7 +111,7 @@ public class AppStartupHelper {
      * 创建跳转到主应用的Intent
      */
     public static Intent createMainIntent(Context context) {
-        Intent intent = new Intent(context, com.limtide.ugclite.MainActivity.class);
+        Intent intent = new Intent(context, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         return intent;
     }
@@ -117,7 +120,7 @@ public class AppStartupHelper {
      * 创建跳转到登录页的Intent
      */
     public static Intent createLoginIntent(Context context) {
-        Intent intent = new Intent(context, com.limtide.ugclite.activity.LoginActivity.class);
+        Intent intent = new Intent(context, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         return intent;
     }

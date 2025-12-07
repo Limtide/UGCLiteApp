@@ -1,11 +1,8 @@
-package com.limtide.ugclite;
+package com.limtide.ugclite.ui.activity;
 
-import android.content.Intent;
-import android.nfc.Tag;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.TableLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -15,10 +12,10 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import com.limtide.ugclite.activity.ProfileActivity;
+import com.limtide.ugclite.R;
 import com.limtide.ugclite.databinding.ActivityMainBinding;
-import com.limtide.ugclite.fragment.HomeFragment;
-import com.limtide.ugclite.fragment.ProfileFragment;
+import com.limtide.ugclite.ui.fragment.HomeFragment;
+import com.limtide.ugclite.ui.fragment.ProfileFragment;
 import com.limtide.ugclite.utils.PreferenceManager;
 
 public class MainActivity extends AppCompatActivity {

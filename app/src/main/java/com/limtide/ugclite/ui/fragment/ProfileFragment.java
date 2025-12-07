@@ -1,4 +1,4 @@
-package com.limtide.ugclite.fragment;
+package com.limtide.ugclite.ui.fragment;
 
 import android.os.Bundle;
 import android.util.Log;

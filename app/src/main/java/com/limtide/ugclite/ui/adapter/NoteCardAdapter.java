@@ -1,4 +1,4 @@
-package com.limtide.ugclite.adapter;
+package com.limtide.ugclite.ui.adapter;
 
 import android.content.Context;
 import android.content.Intent;
@@ -15,7 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.limtide.ugclite.R;
-import com.limtide.ugclite.activity.PostDetailActivity;
+import com.limtide.ugclite.ui.activity.PostDetailActivity;
 import com.limtide.ugclite.data.model.Post;
 import com.limtide.ugclite.databinding.NoteCardBinding;
 import com.limtide.ugclite.utils.LikeManager;

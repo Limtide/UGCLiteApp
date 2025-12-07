@@ -1,4 +1,4 @@
-package com.limtide.ugclite.fragment;
+package com.limtide.ugclite.ui.fragment;
 
 import android.content.Context;
 import android.content.Intent;
@@ -23,8 +23,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import com.limtide.ugclite.activity.PostDetailActivity;
-import com.limtide.ugclite.adapter.NoteCardAdapter;
+import com.limtide.ugclite.ui.activity.PostDetailActivity;
+import com.limtide.ugclite.ui.adapter.NoteCardAdapter;
 import com.limtide.ugclite.data.model.Post;
 import com.limtide.ugclite.databinding.FragmentHomeBinding;
 import com.limtide.ugclite.network.ApiService;

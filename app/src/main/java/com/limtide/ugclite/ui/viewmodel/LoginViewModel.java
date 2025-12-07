@@ -1,4 +1,4 @@
-package com.limtide.ugclite.viewmodel;
+package com.limtide.ugclite.ui.viewmodel;
 
 import android.app.Application;
 import android.text.TextUtils;

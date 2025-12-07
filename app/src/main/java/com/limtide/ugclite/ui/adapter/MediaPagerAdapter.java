@@ -1,12 +1,10 @@
-package com.limtide.ugclite.adapter;
+package com.limtide.ugclite.ui.adapter;
 
 import android.content.Context;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.VideoView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;

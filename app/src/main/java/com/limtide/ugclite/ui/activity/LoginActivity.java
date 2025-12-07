@@ -1,4 +1,4 @@
-package com.limtide.ugclite.activity;
+package com.limtide.ugclite.ui.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -9,11 +9,10 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.limtide.ugclite.MainActivity;
 import com.limtide.ugclite.databinding.ActivityLoginBinding;
 import com.limtide.ugclite.utils.AppStartupHelper;
 import com.limtide.ugclite.utils.PreferenceManager;
-import com.limtide.ugclite.viewmodel.LoginViewModel;
+import com.limtide.ugclite.ui.viewmodel.LoginViewModel;
 
 public class LoginActivity extends AppCompatActivity {
 

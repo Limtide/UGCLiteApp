@@ -1,4 +1,4 @@
-package com.limtide.ugclite.activity;
+package com.limtide.ugclite.ui.activity;
 
 import android.content.Intent;
 import android.graphics.Color;
@@ -12,8 +12,6 @@ import android.text.style.ForegroundColorSpan;
 import android.text.TextPaint;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ImageView;
 
 import android.widget.Toast;
 
@@ -27,16 +25,14 @@ import android.transition.ChangeBounds;
 import android.transition.ChangeImageTransform;
 import android.transition.ChangeTransform;
 import android.transition.Fade;
-import android.transition.Transition;
 import android.transition.TransitionSet;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.tabs.TabLayout;
 
 import com.bumptech.glide.Glide;
-import com.limtide.ugclite.MainActivity;
 import com.limtide.ugclite.R;
-import com.limtide.ugclite.adapter.MediaPagerAdapter;
+import com.limtide.ugclite.ui.adapter.MediaPagerAdapter;
 import com.limtide.ugclite.data.model.Post;
 import com.limtide.ugclite.databinding.ActivityPostDetailBinding;
 import com.limtide.ugclite.utils.LikeManager;

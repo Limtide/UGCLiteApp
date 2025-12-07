@@ -1,7 +1,7 @@
-package com.limtide.ugclite.activity;
+package com.limtide.ugclite.ui.activity;
 
 import android.os.Bundle;
-import com.limtide.ugclite.R;
+
 import com.limtide.ugclite.databinding.ActivityHashtagBinding;
 import androidx.appcompat.app.AppCompatActivity;
 
