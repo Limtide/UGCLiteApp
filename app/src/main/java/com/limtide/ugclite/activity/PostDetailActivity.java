@@ -12,6 +12,7 @@ import android.text.style.ForegroundColorSpan;
 import android.text.TextPaint;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import android.widget.Toast;
@@ -20,6 +21,14 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
+import android.transition.AutoTransition;
+import android.transition.ChangeBounds;
+import android.transition.ChangeImageTransform;
+import android.transition.ChangeTransform;
+import android.transition.Fade;
+import android.transition.Transition;
+import android.transition.TransitionSet;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.tabs.TabLayout;
@@ -74,6 +83,9 @@ public class PostDetailActivity extends AppCompatActivity {
         try {
             binding = ActivityPostDetailBinding.inflate(getLayoutInflater());
             setContentView(binding.getRoot());
+
+            // 设置窗口转场动画
+            setupWindowTransitions();
 
             // 获取传递的数据
             getIntentData();
@@ -295,6 +307,52 @@ public class PostDetailActivity extends AppCompatActivity {
 
         // 设置当前页
         binding.viewPager.setCurrentItem(currentMediaPosition, false);
+
+        // 预加载当前页面的图片以确保转场动画流畅
+        preloadCurrentPageImage();
+    }
+
+    /**
+     * 预加载当前页面的图片以确保转场动画流畅
+     */
+    private void preloadCurrentPageImage() {
+        if (mediaClips == null || mediaClips.isEmpty()) {
+            return;
+        }
+
+        Post.Clip currentClip = mediaClips.get(currentMediaPosition);
+        if (currentClip != null && currentClip.type == 0 && currentClip.url != null) {
+            // 使用Glide预加载首图
+            Glide.with(this)
+                    .load(currentClip.url)
+                    .listener(new com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable>() {
+                        @Override
+                        public boolean onLoadFailed(@Nullable com.bumptech.glide.load.engine.GlideException e,
+                                Object model, com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target,
+                                boolean isFirstResource) {
+                            Log.w(TAG, "Failed to preload transition image: " + currentClip.url);
+                            return false;
+                        }
+
+                        @Override
+                        public boolean onResourceReady(android.graphics.drawable.Drawable resource,
+                                Object model, com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target,
+                                com.bumptech.glide.load.DataSource dataSource, boolean isFirstResource) {
+                            Log.d(TAG, "Transition image preloaded successfully: " + currentClip.url);
+
+                            // 图片加载完成后，延迟启动转场动画以确保流畅性
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                                postponeEnterTransition();
+                                // 给图片一点时间渲染
+                                binding.viewPager.post(() -> {
+                                    startPostponedEnterTransition();
+                                });
+                            }
+                            return false;
+                        }
+                    })
+                    .preload();
+        }
     }
 
     /**
@@ -586,6 +644,54 @@ public class PostDetailActivity extends AppCompatActivity {
     }
 
     /**
+     * 设置窗口转场动画
+     */
+    private void setupWindowTransitions() {
+        // 设置共享元素进入转场
+        TransitionSet enterTransition = new TransitionSet();
+        enterTransition.addTransition(new ChangeBounds());
+        enterTransition.addTransition(new ChangeTransform());
+        enterTransition.addTransition(new ChangeImageTransform());
+        enterTransition.setDuration(400);
+        enterTransition.setInterpolator(new androidx.interpolator.view.animation.FastOutSlowInInterpolator());
+
+        // 设置共享元素退出转场
+        TransitionSet returnTransition = new TransitionSet();
+        returnTransition.addTransition(new ChangeBounds());
+        returnTransition.addTransition(new ChangeTransform());
+        returnTransition.addTransition(new ChangeImageTransform());
+        returnTransition.setDuration(350);
+        returnTransition.setInterpolator(new androidx.interpolator.view.animation.FastOutSlowInInterpolator());
+
+        // 设置窗口转场
+        getWindow().setSharedElementEnterTransition(enterTransition);
+        getWindow().setSharedElementReturnTransition(returnTransition);
+
+        // 设置非共享元素（背景区域）的渐显效果
+        Fade fade = new Fade(Fade.IN);
+        fade.addTarget(R.id.top_bar);
+        fade.addTarget(R.id.content_container);
+        fade.addTarget(R.id.bottom_interaction_bar);
+        fade.addTarget(R.id.home_indicator_container);
+        fade.setDuration(300);
+        fade.setStartDelay(200); // 延迟开始，让图片放大动画先执行
+        fade.setInterpolator(new androidx.interpolator.view.animation.FastOutSlowInInterpolator());
+
+        getWindow().setEnterTransition(fade);
+        getWindow().setReturnTransition(fade);
+
+        // 设置背景色过渡
+        AutoTransition autoTransition = new AutoTransition();
+        autoTransition.setDuration(300);
+        autoTransition.setInterpolator(new androidx.interpolator.view.animation.FastOutSlowInInterpolator());
+
+        // 设置ViewPager的转场名称
+        ViewCompat.setTransitionName(binding.viewPager, "cover_image_transition");
+
+        Log.d(TAG, "Window transitions setup completed");
+    }
+
+    /**
      * 设置点击监听器
      */
     private void setupClickListeners() {
@@ -593,9 +699,9 @@ public class PostDetailActivity extends AppCompatActivity {
         // 返回按钮 - 直接返回上一页
         binding.backButton.setOnClickListener(v -> {
             Log.d(TAG, "back button clicked");
+            // 使用共享元素返回动画，替代之前的淡出效果
             finish();
-            // 添加返回动画，让用户体验更流畅
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            // 不再需要手动设置overridePendingTransition，因为系统会处理共享元素转场
         });
 
         // 关注按钮点击事件

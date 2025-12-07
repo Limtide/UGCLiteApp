@@ -3,12 +3,14 @@
 <androidx.cardview.widget.CardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/card_root"
     android:layout_width="189dp"
     android:layout_height="wrap_content"
     android:layout_margin="2dp"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground"
+    android:transitionName="card_transition"
     app:cardCornerRadius="4dp"
     app:cardElevation="0dp"
     app:cardBackgroundColor="#FFFFFF">
@@ -32,7 +34,8 @@
                 android:layout_height="match_parent"
                 android:scaleType="centerCrop"
                 android:contentDescription="封面"
-                android:adjustViewBounds="true" />
+                android:adjustViewBounds="true"
+                android:transitionName="cover_image_transition" />
         </FrameLayout>
 
         <!-- 内容信息区域 -->

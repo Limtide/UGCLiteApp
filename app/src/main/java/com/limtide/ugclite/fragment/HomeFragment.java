@@ -151,6 +151,15 @@ public class HomeFragment extends Fragment {
                     Intent intent = new Intent(requireActivity(), PostDetailActivity.class);
                     intent.putExtra("post", (Serializable) post); // 明确转换为Serializable
 
+                    // 获取点击的卡片视图
+                    RecyclerView.ViewHolder viewHolder = binding.recyclerView.findViewHolderForAdapterPosition(position);
+                    View coverImage = null;
+                    if (viewHolder != null) {
+                        // 获取封面图片视图
+                        NoteCardAdapater.ViewHolder noteViewHolder = (NoteCardAdapater.ViewHolder) viewHolder;
+                        coverImage = noteViewHolder.getBinding().coverImage;
+                    }
+
                     // 保存当前滚动位置
                     StaggeredGridLayoutManager layoutManager = (StaggeredGridLayoutManager) binding.recyclerView.getLayoutManager();
                     if (layoutManager != null) {
@@ -161,10 +170,28 @@ public class HomeFragment extends Fragment {
                         }
                     }
 
-                    startActivity(intent);
-                    Log.d(TAG, "Successfully started PostDetailActivity");
+                    // 创建共享元素转场动画
+                    if (coverImage != null) {
+                        android.app.ActivityOptions options = android.app.ActivityOptions
+                                .makeSceneTransitionAnimation(requireActivity(),
+                                    android.util.Pair.create(coverImage, "cover_image_transition"));
+                        startActivity(intent, options.toBundle());
+                    } else {
+                        // 如果找不到封面图片，使用普通跳转
+                        startActivity(intent);
+                    }
+
+                    Log.d(TAG, "Successfully started PostDetailActivity with transition");
                 } catch (Exception e) {
                     Log.e(TAG, "Error starting PostDetailActivity: " + e.getMessage(), e);
+                    // 发生错误时使用普通跳转
+                    try {
+                        Intent intent = new Intent(requireActivity(), PostDetailActivity.class);
+                        intent.putExtra("post", (Serializable) post);
+                        startActivity(intent);
+                    } catch (Exception fallbackError) {
+                        Log.e(TAG, "Fallback navigation failed: " + fallbackError.getMessage(), fallbackError);
+                    }
                 }
             }
         });

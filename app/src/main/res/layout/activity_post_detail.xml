@@ -91,7 +91,8 @@
                 <androidx.viewpager2.widget.ViewPager2
                     android:id="@+id/viewPager"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent" />
+                    android:layout_height="match_parent"
+                    android:transitionName="cover_image_transition" />
 
                 <!-- 音量图标 - 悬浮在图片右下角 -->
                 <ImageView
