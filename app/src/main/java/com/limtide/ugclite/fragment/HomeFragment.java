@@ -11,6 +11,10 @@ import android.view.ViewGroup;
 
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
+import java.util.Collections;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -44,17 +48,20 @@ public class HomeFragment extends Fragment {
     private NoteCardAdapater notecardAdapater;
     private ApiService apiService;
     private boolean isFirst = true;
-    private boolean isLoading = false; // 是否正在加载数据
-    private boolean hasMoreData = true; // 是否还有更多数据
-    private int currentCursor = 0; // 当前分页游标
     private static final int PAGE_SIZE = 20; // 每页数据量
+
+    // 线程安全的状态管理
+    private final ReentrantLock stateLock = new ReentrantLock();
+    private final AtomicBoolean isLoading = new AtomicBoolean(false);
+    private final AtomicBoolean hasMoreData = new AtomicBoolean(true);
+    private final AtomicInteger currentCursor = new AtomicInteger(0);
 
     // 保存滚动状态
     private int savedFirstVisiblePosition = 0;
     private Parcelable savedRecyclerViewState;
 
-    // 保存的数据列表
-    private List<Post> savedPosts = new ArrayList<>();
+    // 线程安全的数据存储
+    private volatile List<Post> savedPosts = Collections.synchronizedList(new ArrayList<>());
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -67,23 +74,28 @@ public class HomeFragment extends Fragment {
         super.onCreate(savedInstanceState);
         Log.d(TAG,"HomeFragment is onCreate");
 
-        // 恢复保存的状态
+        // 恢复保存的状态 - 线程安全
         if (savedInstanceState != null) {
-            isFirst = savedInstanceState.getBoolean(KEY_IS_FIRST, true);
-            isLoading = savedInstanceState.getBoolean(KEY_IS_LOADING, false);
-            hasMoreData = savedInstanceState.getBoolean(KEY_HAS_MORE_DATA, true);
-            currentCursor = savedInstanceState.getInt(KEY_CURRENT_CURSOR, 0);
-            savedRecyclerViewState = savedInstanceState.getParcelable(KEY_RECYCLER_STATE);
+            stateLock.lock();
+            try {
+                isFirst = savedInstanceState.getBoolean(KEY_IS_FIRST, true);
+                isLoading.set(savedInstanceState.getBoolean(KEY_IS_LOADING, false));
+                hasMoreData.set(savedInstanceState.getBoolean(KEY_HAS_MORE_DATA, true));
+                currentCursor.set(savedInstanceState.getInt(KEY_CURRENT_CURSOR, 0));
+                savedRecyclerViewState = savedInstanceState.getParcelable(KEY_RECYCLER_STATE);
 
-            // 恢复数据列表
-            savedPosts.clear();
-            ArrayList<Post> posts = (ArrayList<Post>) savedInstanceState.getSerializable(KEY_POSTS_DATA);
-            if (posts != null) {
-                savedPosts.addAll(posts);
-                Log.d(TAG, "恢复保存的数据，数量: " + savedPosts.size());
+                // 恢复数据列表
+                savedPosts.clear();
+                ArrayList<Post> posts = (ArrayList<Post>) savedInstanceState.getSerializable(KEY_POSTS_DATA);
+                if (posts != null) {
+                    savedPosts.addAll(posts);
+                    Log.d(TAG, "恢复保存的数据，数量: " + savedPosts.size());
+                }
+
+                Log.d(TAG, "状态恢复完成 - isFirst: " + isFirst + ", cursor: " + currentCursor.get() + ", posts: " + savedPosts.size());
+            } finally {
+                stateLock.unlock();
             }
-
-            Log.d(TAG, "状态恢复完成 - isFirst: " + isFirst + ", cursor: " + currentCursor + ", posts: " + savedPosts.size());
         }
     }
 
@@ -161,10 +173,10 @@ public class HomeFragment extends Fragment {
     }
 
     /**
-     * 检查是否需要加载更多数据
+     * 检查是否需要加载更多数据 - 线程安全
      */
     private void checkLoadMore() {
-        if (isLoading || !hasMoreData) {
+        if (isLoading.get() || !hasMoreData.get()) {
             return;
         }
 
@@ -188,46 +200,66 @@ public class HomeFragment extends Fragment {
     }
 
     /**
-     * 加载Feed数据 - 从API获取真实数据
+     * 加载Feed数据 - 从API获取真实数据 - 线程安全
      */
     private void loadFeedData() {
-        if (isLoading) {
-            Log.d(TAG, "数据正在加载中，跳过重复请求");
-            return;
+        stateLock.lock();
+        try {
+            if (isLoading.get()) {
+                Log.d(TAG, "数据正在加载中，跳过重复请求");
+                return;
+            }
+
+            // 原子性地设置加载状态
+            isLoading.set(true);
+            showLoadingState();
+
+            Log.d(TAG, "开始加载Feed数据，数量: " + PAGE_SIZE + ", 支持视频: false, cursor: " + currentCursor.get());
+
+            // 调用API获取数据（第一页，cursor=0）- 使用SafeFeedCallback避免内存泄漏
+            apiService.getFeedData(PAGE_SIZE, false, currentCursor.get(), new SafeFeedCallback(this, false));
+        } finally {
+            stateLock.unlock();
         }
-
-        isLoading = true;
-        showLoadingState();
-
-        Log.d(TAG, "开始加载Feed数据，数量: " + PAGE_SIZE + ", 支持视频: false");
-
-        // 调用API获取数据（第一页，cursor=0）- 使用SafeFeedCallback避免内存泄漏
-        apiService.getFeedData(PAGE_SIZE, false, currentCursor, new SafeFeedCallback(this, false));
     }
 
     /**
-     * 刷新Feed数据
+     * 刷新Feed数据 - 线程安全
      */
     private void refreshFeedData() {
-        hasMoreData = true; // 重置为有更多数据
-        currentCursor = 0; // 重置游标到第一页
+        stateLock.lock();
+        try {
+            // 原子性地重置状态
+            hasMoreData.set(true); // 重置为有更多数据
+            currentCursor.set(0); // 重置游标到第一页
+            Log.d(TAG, "重置状态进行刷新，cursor: " + currentCursor.get());
+        } finally {
+            stateLock.unlock();
+        }
+
         loadFeedData();
     }
 
     /**
-     * 加载更多Feed数据
+     * 加载更多Feed数据 - 线程安全
      */
     private void loadMoreFeedData() {
-        if (isLoading || !hasMoreData) {
-            Log.d(TAG, "正在加载或没有更多数据，跳过加载更多");
-            return;
+        stateLock.lock();
+        try {
+            if (isLoading.get() || !hasMoreData.get()) {
+                Log.d(TAG, "正在加载或没有更多数据，跳过加载更多。isLoading: " + isLoading.get() + ", hasMoreData: " + hasMoreData.get());
+                return;
+            }
+
+            // 原子性地设置加载状态
+            isLoading.set(true);
+            Log.d(TAG, "开始加载更多Feed数据，cursor: " + currentCursor.get() + ", 数量: " + PAGE_SIZE);
+
+            // 调用API获取更多数据 - 使用SafeFeedCallback避免内存泄漏
+            apiService.getFeedData(PAGE_SIZE, false, currentCursor.get(), new SafeFeedCallback(this, true));
+        } finally {
+            stateLock.unlock();
         }
-
-        isLoading = true;
-        Log.d(TAG, "开始加载更多Feed数据，cursor: " + currentCursor + ", 数量: " + PAGE_SIZE);
-
-        // 调用API获取更多数据 - 使用SafeFeedCallback避免内存泄漏
-        apiService.getFeedData(PAGE_SIZE, false, currentCursor, new SafeFeedCallback(this, true));
     }
 
     /**
@@ -380,11 +412,16 @@ public class HomeFragment extends Fragment {
         super.onSaveInstanceState(outState);
         Log.d(TAG, "保存Fragment状态");
 
-        // 保存状态变量
-        outState.putBoolean(KEY_IS_FIRST, isFirst);
-        outState.putBoolean(KEY_IS_LOADING, isLoading);
-        outState.putBoolean(KEY_HAS_MORE_DATA, hasMoreData);
-        outState.putInt(KEY_CURRENT_CURSOR, currentCursor);
+        // 线程安全地保存状态变量
+        stateLock.lock();
+        try {
+            outState.putBoolean(KEY_IS_FIRST, isFirst);
+            outState.putBoolean(KEY_IS_LOADING, isLoading.get());
+            outState.putBoolean(KEY_HAS_MORE_DATA, hasMoreData.get());
+            outState.putInt(KEY_CURRENT_CURSOR, currentCursor.get());
+        } finally {
+            stateLock.unlock();
+        }
 
         // 保存RecyclerView状态
         if (binding.recyclerView != null && binding.recyclerView.getLayoutManager() != null) {
@@ -403,7 +440,7 @@ public class HomeFragment extends Fragment {
             Log.d(TAG, "保存数据列表，数量: " + currentPosts.size());
         }
 
-        Log.d(TAG, "状态保存完成 - isFirst: " + isFirst + ", cursor: " + currentCursor);
+        Log.d(TAG, "状态保存完成 - isFirst: " + isFirst + ", cursor: " + currentCursor.get());
     }
 
     /**
@@ -469,7 +506,7 @@ public class HomeFragment extends Fragment {
             }
 
             // 当滚动停止时检查是否需要加载更多
-            if (newState == RecyclerView.SCROLL_STATE_IDLE && !fragment.isLoading && fragment.hasMoreData) {
+            if (newState == RecyclerView.SCROLL_STATE_IDLE && !fragment.isLoading.get() && fragment.hasMoreData.get()) {
                 fragment.checkLoadMore();
             }
         }
@@ -483,7 +520,7 @@ public class HomeFragment extends Fragment {
             }
 
             // 只有在向下滚动时才检查
-            if (dy > 0 && !fragment.isLoading && fragment.hasMoreData) {
+            if (dy > 0 && !fragment.isLoading.get() && fragment.hasMoreData.get()) {
                 fragment.checkLoadMore();
             }
         }
@@ -510,11 +547,11 @@ public class HomeFragment extends Fragment {
 
             Log.d(fragment.TAG, "API调用成功，获取到 " + (posts != null ? posts.size() : 0) + " 条数据");
 
-            // 切换到主线程更新UI
+            // 切换到主线程更新UI - 线程安全的状态更新
             fragment.requireActivity().runOnUiThread(() -> {
                 try {
-                    fragment.isLoading = false;
-                    fragment.hasMoreData = hasMore;
+                    // 原子性地更新所有状态
+                    fragment.updateLoadingStateAtomic(false, hasMore);
 
                     if (fragment.notecardAdapater != null) {
                         if (posts != null && !posts.isEmpty()) {
@@ -530,8 +567,8 @@ public class HomeFragment extends Fragment {
                                 Log.d(fragment.TAG, "过滤后数据已加载到瀑布流适配器，原始数据: " + posts.size() + "，过滤后: " + filteredPosts.size());
                             }
 
-                            // 更新cursor为下一页的起始位置
-                            fragment.currentCursor += filteredPosts.size();
+                            // 原子性地更新cursor
+                            fragment.updateCursorAtomic(filteredPosts.size());
                         } else {
                             if (!isLoadMore) {
                                 fragment.showEmptyState();
@@ -546,6 +583,8 @@ public class HomeFragment extends Fragment {
                     fragment.hideLoadingState();
                 } catch (Exception e) {
                     Log.e(fragment.TAG, "更新UI时发生异常", e);
+                    // 发生异常时重置加载状态
+                    fragment.isLoading.set(false);
                 }
             });
         }
@@ -559,10 +598,11 @@ public class HomeFragment extends Fragment {
 
             Log.e(fragment.TAG, "API调用失败: " + errorMessage);
 
-            // 切换到主线程更新UI
+            // 切换到主线程更新UI - 线程安全的状态更新
             fragment.requireActivity().runOnUiThread(() -> {
                 try {
-                    fragment.isLoading = false;
+                    // 原子性地重置加载状态
+                    fragment.isLoading.set(false);
 
                     if (!isLoadMore) {
                         // 显示错误信息
@@ -669,6 +709,67 @@ public class HomeFragment extends Fragment {
             Log.d(fragment.TAG, "下拉刷新被触发");
             // 刷新数据
             fragment.refreshFeedData();
+        }
+    }
+
+    /**
+     * 原子性地更新加载状态 - 线程安全
+     */
+    private void updateLoadingStateAtomic(boolean loading, boolean hasMore) {
+        stateLock.lock();
+        try {
+            isLoading.set(loading);
+            hasMoreData.set(hasMore);
+            Log.d(TAG, "原子性更新状态 - isLoading: " + loading + ", hasMoreData: " + hasMore + ", cursor: " + currentCursor.get());
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    /**
+     * 原子性地更新cursor - 线程安全
+     */
+    private void updateCursorAtomic(int delta) {
+        stateLock.lock();
+        try {
+            int newCursor = currentCursor.addAndGet(delta);
+            Log.d(TAG, "原子性更新cursor - delta: " + delta + ", newCursor: " + newCursor);
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    /**
+     * 获取当前状态快照 - 线程安全
+     */
+    private StateSnapshot getStateSnapshot() {
+        stateLock.lock();
+        try {
+            return new StateSnapshot(
+                isLoading.get(),
+                hasMoreData.get(),
+                currentCursor.get(),
+                new ArrayList<>(savedPosts)
+            );
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    /**
+     * 状态快照类 - 用于线程安全地传递状态信息
+     */
+    private static class StateSnapshot {
+        final boolean isLoading;
+        final boolean hasMoreData;
+        final int cursor;
+        final List<Post> posts;
+
+        StateSnapshot(boolean isLoading, boolean hasMoreData, int cursor, List<Post> posts) {
+            this.isLoading = isLoading;
+            this.hasMoreData = hasMoreData;
+            this.cursor = cursor;
+            this.posts = posts;
         }
     }
 
