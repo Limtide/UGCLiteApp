@@ -22,17 +22,26 @@ import com.limtide.ugclite.utils.LikeManager;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * 瀑布流适配器 - 用于展示note_card内容
+ *
+ * @线程安全说明:
+ * - 使用ReentrantReadWriteLock保护集合操作
+ * - 使用Collections.synchronizedList保证List操作线程安全
+ * - 所有数据修改操作都在写锁保护下进行
+ * - 所有数据读取操作都在读锁保护下进行
  */
 public class NoteCardAdapater extends RecyclerView.Adapter<NoteCardAdapater.ViewHolder> {
 
     private static final String TAG = "WaterfallAdapter";
-    private List<Post> postList;
+    private final List<Post> postList;
+    private final ReentrantReadWriteLock dataLock = new ReentrantReadWriteLock();
     private Context context;
     private OnItemClickListener onItemClickListener;
     private LikeManager likeManager;
@@ -44,9 +53,10 @@ public class NoteCardAdapater extends RecyclerView.Adapter<NoteCardAdapater.View
     public NoteCardAdapater(Context context) {
         Log.d(TAG, "NoteCardAdapter constructor called - Context: " + (context != null ? context.getClass().getSimpleName() : "null"));
         this.context = context;
-        this.postList = new ArrayList<>();
+        // 使用线程安全的List实现
+        this.postList = Collections.synchronizedList(new ArrayList<>());
         this.likeManager = LikeManager.getInstance(context);
-        Log.d(TAG, "NoteCardAdapter initialized successfully - LikeManager: " + (likeManager != null ? "initialized" : "failed"));
+        Log.d(TAG, "NoteCardAdapter initialized successfully with thread-safe list - LikeManager: " + (likeManager != null ? "initialized" : "failed"));
     }
 
     @NonNull
@@ -58,8 +68,31 @@ public class NoteCardAdapater extends RecyclerView.Adapter<NoteCardAdapater.View
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        Post post = postList.get(position);
+        // 使用读锁保护数据访问
+        dataLock.readLock().lock();
+        final Post post;
+        try {
+            // 检查位置有效性，避免IndexOutOfBoundsException
+            if (position < 0 || position >= postList.size()) {
+                Log.w(TAG, "Invalid position in onBindViewHolder: " + position + ", list size: " + postList.size());
+                return;
+            }
+            post = postList.get(position);
+        } finally {
+            dataLock.readLock().unlock();
+        }
+
         NoteCardBinding binding = holder.getBinding();
+
+        // 如果post为null，设置默认值并返回
+        if (post == null) {
+            Log.w(TAG, "Post is null at position: " + position);
+            binding.coverImage.setImageResource(R.drawable.ic_empty_state);
+            binding.videoTitle.setText("加载中...");
+            binding.userAvatar.setImageResource(R.drawable.ic_user);
+            binding.userName.setText("未知作者");
+            return;
+        }
 
         // 设置封面图片 - 显示图片或视频类型的第一个clip作为封面
         if (post.clips != null && !post.clips.isEmpty()) {
@@ -319,39 +352,82 @@ public class NoteCardAdapater extends RecyclerView.Adapter<NoteCardAdapater.View
 
     @Override
     public int getItemCount() {
-        return postList.size();
+        // 使用读锁保护大小读取
+        dataLock.readLock().lock();
+        try {
+            return postList.size();
+        } finally {
+            dataLock.readLock().unlock();
+        }
     }
 
     /**
-     * 添加新的数据
+     * 添加新的数据 - 线程安全
      */
     public void addPosts(List<Post> newPosts) {
-        if (newPosts != null) {
+        if (newPosts == null || newPosts.isEmpty()) {
+            Log.d(TAG, "addPosts called with null or empty list");
+            return;
+        }
+
+        // 使用写锁保护添加操作
+        dataLock.writeLock().lock();
+        try {
             int oldSize = postList.size();
-            postList.addAll(newPosts);
-            notifyItemRangeInserted(oldSize, newPosts.size());
-            Log.d(TAG, "Added " + newPosts.size() + " new posts");
+            int newItemsCount = newPosts.size();
+
+            // 创建副本避免并发修改
+            List<Post> newPostsCopy = new ArrayList<>(newPosts);
+            postList.addAll(newPostsCopy);
+
+            Log.d(TAG, "Thread-safe added " + newItemsCount + " new posts, old size: " + oldSize + ", new size: " + postList.size());
+
+            // 在锁保护下进行通知，确保状态一致性
+            notifyItemRangeInserted(oldSize, newItemsCount);
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error in addPosts: " + e.getMessage(), e);
+        } finally {
+            dataLock.writeLock().unlock();
         }
     }
 
     /**
-     * 设置新数据（替换所有数据）
+     * 设置新数据（替换所有数据） - 线程安全
      */
     public void setPosts(List<Post> posts) {
-        this.postList.clear();
-        if (posts != null) {
-            this.postList.addAll(posts);
-            Log.d(TAG, "Posts added successfully:");
-            for (int i = 0; i < Math.min(posts.size(), 5); i++) {
-                Post post = posts.get(i);
-                Log.d(TAG, "Post " + i + ": " + (post != null && post.title != null ? post.title : "null"));
+        // 使用写锁保护替换操作
+        dataLock.writeLock().lock();
+        try {
+            // 清空现有数据
+            postList.clear();
+
+            if (posts != null && !posts.isEmpty()) {
+                // 创建副本避免并发修改
+                List<Post> postsCopy = new ArrayList<>(posts);
+                postList.addAll(postsCopy);
+
+                Log.d(TAG, "Thread-safe setPosts added successfully:");
+                for (int i = 0; i < Math.min(postsCopy.size(), 5); i++) {
+                    Post post = postsCopy.get(i);
+                    Log.d(TAG, "Post " + i + ": " + (post != null && post.title != null ? post.title : "null"));
+                }
+            } else {
+                Log.w(TAG, "setPosts called with null or empty posts");
             }
-        } else {
-            Log.w(TAG, "setPosts called with null posts");
+
+            int finalSize = postList.size();
+            Log.d(TAG, "Thread-safe set " + (posts != null ? posts.size() : 0) + " posts, new total: " + finalSize);
+            Log.d(TAG, "onItemClickListener is " + (onItemClickListener != null ? "not null" : "null"));
+
+            // 在锁保护下进行通知，确保状态一致性
+            notifyDataSetChanged();
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error in setPosts: " + e.getMessage(), e);
+        } finally {
+            dataLock.writeLock().unlock();
         }
-        notifyDataSetChanged();
-        Log.d(TAG, "Set " + (posts != null ? posts.size() : 0) + " posts, new total: " + postList.size());
-        Log.d(TAG, "onItemClickListener is " + (onItemClickListener != null ? "not null" : "null"));
     }
 
     /**
@@ -364,12 +440,6 @@ public class NoteCardAdapater extends RecyclerView.Adapter<NoteCardAdapater.View
         Log.d(TAG, "Cleared all posts");
     }
 
-    /**
-     * 获取指定位置的数据
-     */
-    public Post getPost(int position) {
-        return postList.get(position);
-    }
 
     /**
      * 设置点击监听器
@@ -479,5 +549,44 @@ public class NoteCardAdapater extends RecyclerView.Adapter<NoteCardAdapater.View
         public NoteCardBinding getBinding() {
             return binding;
         }
+    }
+
+    /**
+     * 获取指定位置的Post - 线程安全
+     * @param position 位置索引
+     * @return Post对象，如果位置无效返回null
+     */
+    public Post getPost(int position) {
+        dataLock.readLock().lock();
+        try {
+            if (position < 0 || position >= postList.size()) {
+                Log.w(TAG, "Invalid position in getPost: " + position + ", list size: " + postList.size());
+                return null;
+            }
+            return postList.get(position);
+        } finally {
+            dataLock.readLock().unlock();
+        }
+    }
+
+    /**
+     * 获取所有Post的快照 - 线程安全
+     * @return Post列表的副本，避免并发修改
+     */
+    public List<Post> getPostsSnapshot() {
+        dataLock.readLock().lock();
+        try {
+            return new ArrayList<>(postList);
+        } finally {
+            dataLock.readLock().unlock();
+        }
+    }
+
+    /**
+     * 获取当前数据大小 - 线程安全
+     * @return 数据列表大小
+     */
+    public int getDataSize() {
+        return getItemCount(); // 已经由getItemCount提供线程安全访问
     }
 }
