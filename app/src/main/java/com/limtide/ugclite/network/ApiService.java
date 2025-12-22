@@ -4,6 +4,7 @@ import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import com.limtide.ugclite.data.model.FeedResponse;
 import com.limtide.ugclite.data.model.Post;
 
@@ -27,7 +28,7 @@ import okhttp3.Response;
 public class ApiService {
 
     private static final String TAG = "ApiService";
-    private static final String BASE_URL = "https://college-training-camp.bytedance.com/feed/";
+    private static final String BASE_URL = "https://www.yeduguzhou.com/api/";
     private static final int CONNECT_TIMEOUT = 15; // 连接超时15秒
     private static final int READ_TIMEOUT = 30;    // 读取超时30秒
 
@@ -84,7 +85,7 @@ public class ApiService {
         // 构建URL和Query参数
         HttpUrl.Builder urlBuilder = HttpUrl.parse(BASE_URL).newBuilder()
                 .addQueryParameter("count", String.valueOf(count))
-                .addQueryParameter("accept_video_clip", acceptVideoClip ? "true" : "false");
+                .addQueryParameter("accept_video", acceptVideoClip ? "true" : "false");
 
         // 添加分页参数（只有非第一页时才添加cursor）
         if (cursor > 0) {
@@ -187,28 +188,45 @@ public class ApiService {
             String responseBody = response.body() != null ? response.body().string() : "";
             Log.d(TAG, "API响应内容: " + responseBody);
 
-            //Gson 解析 JSON -> Java 对象
-            FeedResponse feedResponse = gson.fromJson(responseBody, FeedResponse.class);
-            //业务逻辑判断
-            if (feedResponse != null) {
-                if (feedResponse.isSuccess()) {
-                    List<Post> posts = feedResponse.postList;
-                    boolean hasMore = feedResponse.hasMoreData();
-                    Log.d(TAG, "数据解析成功，获取到 " + (posts != null ? posts.size() : 0) + " 条数据，hasMore: " + hasMore);
+            // 先尝试作为FeedResponse对象解析
+            try {
+                FeedResponse feedResponse = gson.fromJson(responseBody, FeedResponse.class);
+                //业务逻辑判断
+                if (feedResponse != null) {
+                    if (feedResponse.isSuccess()) {
+                        List<Post> posts = feedResponse.postList;
+                        boolean hasMore = feedResponse.hasMoreData();
+                        Log.d(TAG, "数据解析成功（对象格式），获取到 " + (posts != null ? posts.size() : 0) + " 条数据，hasMore: " + hasMore);
 
-                    if (callback != null) {
-                        callback.onSuccess(posts, hasMore);
-                    }
-                } else {
-                    String errorMsg = "API返回错误，状态码: " + feedResponse.statusCode;
-                    Log.e(TAG, errorMsg);
-                    if (callback != null) {
-                        callback.onError(errorMsg);
+                        if (callback != null) {
+                            callback.onSuccess(posts, hasMore);
+                        }
+                        return;
+                    } else {
+                        String errorMsg = "API返回错误，状态码: " + feedResponse.statusCode;
+                        Log.e(TAG, errorMsg);
+                        if (callback != null) {
+                            callback.onError(errorMsg);
+                        }
+                        return;
                     }
                 }
-            } else {
-                String errorMsg = "响应数据解析失败";
-                Log.e(TAG, errorMsg);
+            } catch (Exception e) {
+                Log.d(TAG, "尝试解析为对象格式失败，将尝试数组格式");
+            }
+
+            // 如果对象解析失败，尝试作为Post数组解析
+            try {
+                List<Post> posts = gson.fromJson(responseBody, new TypeToken<List<Post>>(){}.getType());
+                boolean hasMore = false; // 数组格式无法确定是否有更多数据，默认为false
+                Log.d(TAG, "数据解析成功（数组格式），获取到 " + (posts != null ? posts.size() : 0) + " 条数据，hasMore: " + hasMore);
+
+                if (callback != null) {
+                    callback.onSuccess(posts, hasMore);
+                }
+            } catch (Exception e) {
+                String errorMsg = "响应数据解析失败，既不是对象格式也不是数组格式";
+                Log.e(TAG, errorMsg, e);
                 if (callback != null) {
                     callback.onError(errorMsg);
                 }

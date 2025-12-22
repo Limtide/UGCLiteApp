@@ -49,9 +49,9 @@ public class HomeFragment extends Fragment {
     private NoteCardAdapter notecardAdapter;
     private ApiService apiService;
     private boolean isFirst = true;
-    private static final int PAGE_SIZE = 20; // 每页数据量
+    private static final int PAGE_SIZE = 10; // 每页数据量
 
-    private static final boolean ACCEPT_VIDEO = true;
+    private static final boolean ACCEPT_VIDEO = false;
 
     // 线程安全的状态管理
     private final ReentrantLock stateLock = new ReentrantLock();
