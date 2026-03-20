@@ -196,3 +196,11 @@ Content-Type: application/json
 12. 定义实体类User时，Room一直报错。Room需要一个默认的无参构造函数。保留默认构造函数，自己写的带参数的业务构造函数加上@Ignore注解。
 13. ReentrantLock与synchronized不同，ReentrantLock显示调用锁，synchronized隐式获取锁。ReentrantLock比synchronized更灵活。其实用起来ReentrantLock比synchronized复杂点，得手动管理锁，synchronized能自动释放。
 14. 使用Vercel作为简单的API接口托管，使用github作为存储平台。但现在Vercel默认 IP 被 DNS 污染或阻断，所以利用 Cloudflare 作为中间反向代理，连接阿里云管理的域名与 Vercel 服务器。使用GitHub进行静态资源存储，未来计划用jsDelivr CDN作加速。
+
+## 演示录屏
+
+[演示视频](https://raw.githubusercontent.com/Limtide/mock_post_data/refs/heads/main/db/有视频.MP4)
+
+后面有许多未能加载出来的封面，是因为返回的都是视频格式，略缩图工具需要将一个视频全部下载后才能生成。下面视频是只有接受图片类型，明显快很多。
+
+[演示视频](https://raw.githubusercontent.com/Limtide/mock_post_data/refs/heads/main/db/无视频.MP4)
