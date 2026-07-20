@@ -71,9 +71,7 @@ public class FeedRepository {
                     try {
                         List<Post> filteredPosts = filterPosts(posts);
 
-                        if (!refresh) {
-                            currentCursor.addAndGet(filteredPosts.size());
-                        }
+                        currentCursor.set(FeedPagination.nextOffset(cursor, posts == null ? 0 : posts.size(), refresh));
 
                         hasMoreData.set(hasMore);
                         isLoading.set(false);
