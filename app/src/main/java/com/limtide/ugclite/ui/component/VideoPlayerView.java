@@ -8,12 +8,14 @@ import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 
 import androidx.media3.common.Player;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.common.MediaItem;
 import androidx.media3.ui.PlayerView;
 import androidx.media3.common.PlaybackException;
+import androidx.media3.common.util.UnstableApi;
 
 import com.limtide.ugclite.R;
 
@@ -51,6 +53,7 @@ public class VideoPlayerView extends FrameLayout implements Player.Listener {
         init(context);
     }
 
+    @OptIn(markerClass = UnstableApi.class)
     private void init(Context context) {
         LayoutInflater.from(context).inflate(R.layout.component_video_player, this, true);
         playerView = findViewById(R.id.player_view);
