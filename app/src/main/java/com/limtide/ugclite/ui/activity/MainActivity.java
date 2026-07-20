@@ -23,6 +23,9 @@ import com.limtide.ugclite.UGCApplication;
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
+    private static final String TAG_HOME = "home";
+    private static final String TAG_PROFILE = "profile";
+    private static final String STATE_CURRENT_TAB = "current_tab";
     private ActivityMainBinding binding;
     private PreferenceManager preferenceManager;
 
@@ -79,16 +82,18 @@ public class MainActivity extends AppCompatActivity {
         initCacheManager();
 
         // 初始化Fragment成员变量
-        initFragments();
+        initFragments(savedInstanceState);
 
         // 设置点击事件监听器
         setupClickListeners();
 
-        // 默认选中社区Tab
         binding.tabLayout.getTabAt(3).select();
 
-        // 默认显示首页
-        showFragment(TabState.HOME);
+        if (savedInstanceState == null) {
+            showFragment(TabState.HOME);
+        } else {
+            updateNavigationStyles(currentTab);
+        }
     }
 
 
@@ -105,20 +110,40 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //声明成员变量
-    private void initFragments() {
+    private void initFragments(Bundle savedInstanceState) {
         fragmentManager = getSupportFragmentManager();
-        homeFragment = new HomeFragment();
-        profileFragment = new ProfileFragment();
+        homeFragment = (HomeFragment) fragmentManager.findFragmentByTag(TAG_HOME);
+        profileFragment = (ProfileFragment) fragmentManager.findFragmentByTag(TAG_PROFILE);
 
-        // 初始化时添加所有Fragment，但不显示
         FragmentTransaction transaction = fragmentManager.beginTransaction();
-        transaction.add(R.id.fragment_container, homeFragment, "home");
-        transaction.add(R.id.fragment_container, profileFragment, "profile");
-        transaction.hide(profileFragment); // 先隐藏非HomeFragment
-        transaction.commit();
+        boolean changed = false;
+        if (homeFragment == null) {
+            homeFragment = new HomeFragment();
+            transaction.add(R.id.fragment_container, homeFragment, TAG_HOME);
+            changed = true;
+        }
+        if (profileFragment == null) {
+            profileFragment = new ProfileFragment();
+            transaction.add(R.id.fragment_container, profileFragment, TAG_PROFILE);
+            transaction.hide(profileFragment);
+            changed = true;
+        }
+        if (changed) {
+            transaction.commit();
+        }
 
-        currentFragment = homeFragment;
-        currentTab = TabState.HOME;
+        if (savedInstanceState != null) {
+            String savedTab = savedInstanceState.getString(STATE_CURRENT_TAB, TabState.HOME.name());
+            try {
+                currentTab = TabState.valueOf(savedTab);
+            } catch (IllegalArgumentException exception) {
+                currentTab = TabState.HOME;
+            }
+            currentFragment = currentTab == TabState.PROFILE ? profileFragment : homeFragment;
+        } else {
+            currentFragment = homeFragment;
+            currentTab = null;
+        }
     }
 
     private void setupClickListeners() {
@@ -232,6 +257,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
+    private void updateNavigationStyles(TabState tabState) {
+        updateTabStyle(binding.homeTab, tabState == TabState.HOME);
+        updateTabStyle(binding.friendsTab, tabState == TabState.FRIENDS);
+        updateTabStyle(binding.messageTab, tabState == TabState.MESSAGE);
+        updateTabStyle(binding.profileTab, tabState == TabState.PROFILE);
+    }
   
     private void updateTabStyle(View tabView, boolean isActive) {
         if (tabView instanceof TextView) {
@@ -336,6 +368,14 @@ public class MainActivity extends AppCompatActivity {
         if (cacheManager != null) {
             cacheManager.getCacheStats(callback);
         }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        if (currentTab != null) {
+            outState.putString(STATE_CURRENT_TAB, currentTab.name());
+        }
+        super.onSaveInstanceState(outState);
     }
 
 }

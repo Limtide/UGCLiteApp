@@ -30,3 +30,9 @@
 - Root cause: an anonymous `observeForever` observer kept cleared ViewModels reachable and continued delivering singleton results.
 - Fix: retain the Observer instance and remove it in `onCleared()`.
 - Verification: Java compilation verifies the observer type and removal path; repeated screen recreation remains in the device-test checklist.
+
+## P1-06 Fragment recreation
+
+- Root cause: every Activity creation added new Home and Profile fragments even though FragmentManager had already restored the old instances.
+- Fix: reuse fragments by tag, add only missing instances, and persist/restore the selected tab.
+- Regression coverage: `MainActivityRecreationTest` recreates the Activity and asserts exactly two root fragments with the Profile tab still visible.
