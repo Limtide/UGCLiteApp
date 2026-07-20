@@ -1,5 +1,6 @@
 package com.limtide.ugclite.database;
 
+import androidx.annotation.NonNull;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
@@ -18,7 +19,7 @@ import com.limtide.ugclite.database.entity.User;
  */
 @Database(
     entities = {User.class},
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters({})
@@ -35,6 +36,13 @@ public abstract class AppDatabase extends RoomDatabase {
     // 单例实例
     private static volatile AppDatabase INSTANCE;
 
+    static final Migration MIGRATION_1_2 = new Migration(1, 2) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            database.execSQL("DELETE FROM users WHERE username = 'demo'");
+        }
+    };
+
     /**
      * 获取数据库实例（单例模式）
      */
@@ -46,6 +54,7 @@ public abstract class AppDatabase extends RoomDatabase {
                             context.getApplicationContext(),
                             AppDatabase.class,
                             DATABASE_NAME)
+                            .addMigrations(MIGRATION_1_2)
                             .addCallback(new RoomDatabase.Callback() {
                                 @Override
                                 public void onCreate(SupportSQLiteDatabase db) {

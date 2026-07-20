@@ -66,3 +66,4 @@
 - Regression coverage: `PasswordHasherTest` covers random salts, correct and incorrect passwords, Unicode, malformed/legacy values, and tampering.
 - Removed artifact: `MD5Utils.java` was deleted and remains recoverable from Git history.
 - Independent-review follow-up: production startup no longer seeds a public `demo/demo123` account; test fixtures must be created only inside test source sets.
+- Upgrade cleanup: Room migration 1 to 2 removes the previously seeded `demo` row so upgraded installations cannot retain the public credential.
