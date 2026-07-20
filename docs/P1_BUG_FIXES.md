@@ -65,3 +65,4 @@
 - Legacy handling: arbitrary MD5 records are rejected with a reset-required result; the known demo credential is regenerated as PBKDF2 because its source password is part of the demo fixture.
 - Regression coverage: `PasswordHasherTest` covers random salts, correct and incorrect passwords, Unicode, malformed/legacy values, and tampering.
 - Removed artifact: `MD5Utils.java` was deleted and remains recoverable from Git history.
+- Independent-review follow-up: production startup no longer seeds a public `demo/demo123` account; test fixtures must be created only inside test source sets.

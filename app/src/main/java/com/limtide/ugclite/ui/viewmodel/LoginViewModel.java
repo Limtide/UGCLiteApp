@@ -41,9 +41,6 @@ public class LoginViewModel extends AndroidViewModel {
         // 观察表单数据变化，更新登录按钮状态
         username.observeForever(username -> validateLoginForm());
         password.observeForever(password -> validateLoginForm());
-
-        // 创建测试用户数据
-        createTestUsers();
     }
 
     /**
@@ -218,12 +215,6 @@ public class LoginViewModel extends AndroidViewModel {
         successMessage.setValue("注册功能开发中，敬请期待");
     }
 
-    /**
-     * 创建测试用户数据
-     */
-    public void createTestUsers() {
-        userRepository.createTestUsers();
-    }
 
     /**
      * 清除错误消息

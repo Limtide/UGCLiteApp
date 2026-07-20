@@ -1,7 +1,6 @@
 package com.limtide.ugclite.data.repository;
 
 import android.app.Application;
-import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -121,35 +120,6 @@ public class UserRepository {
      */
     public LiveData<User> getUserByUsername(String username) {
         return userDao.getUserByUsernameLiveData(username);
-    }
-
-    /**
-     * 预埋测试用户数据
-     */
-    public void createTestUsers() {
-        executorService.execute(() -> {
-            try {
-                // 检查是否已有测试用户
-                User existingUser = userDao.getUserByUsername("demo");
-                if (existingUser == null) {
-
-                    User userdemo = new User("demo", passwordHasher.hash("demo123"), "演示账号", "用于功能演示", "");
-
-                    userDao.insertUsers(List.of(userdemo));
-                    Log.d("UserRepository", "测试用户数据创建成功");
-                } else if (passwordHasher.isLegacyMd5(existingUser.getPassword())) {
-                    existingUser.setPassword(passwordHasher.hash("demo123"));
-                    existingUser.setSignature("用于功能演示");
-                    userDao.updateUser(existingUser);
-                    Log.d("UserRepository", "测试用户凭据已升级");
-                } else {
-                    Log.d("UserRepository", "测试用户数据已存在");
-                }
-            } catch (Exception e) {
-                // 预埋数据失败不影响应用运行
-                Log.e("UserRepository", "创建测试用户数据失败", e);
-            }
-        });
     }
 
     /**

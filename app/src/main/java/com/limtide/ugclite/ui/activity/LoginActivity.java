@@ -74,7 +74,6 @@ public class LoginActivity extends AppCompatActivity {
         // 设置焦点监听
         setupFocusListeners();
         // 初始化时需要预埋测试数据
-        loginViewModel.createTestUsers();
     }
 
     /**
