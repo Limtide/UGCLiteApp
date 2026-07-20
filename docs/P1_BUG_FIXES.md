@@ -67,3 +67,10 @@
 - Removed artifact: `MD5Utils.java` was deleted and remains recoverable from Git history.
 - Independent-review follow-up: production startup no longer seeds a public `demo/demo123` account; test fixtures must be created only inside test source sets.
 - Upgrade cleanup: Room migration 1 to 2 removes the previously seeded `demo` row so upgraded installations cannot retain the public credential.
+
+## P1-11 Fresh-install account creation
+
+- Root cause: production demo-account seeding was removed, but the registration control still displayed a placeholder, leaving a fresh installation with no valid account source.
+- Fix: validate the entered username and password, create a local active user, hash the password with PBKDF2 unconditionally, and continue through the existing successful-authentication flow.
+- Security constraint: callers cannot bypass hashing by supplying a string that merely looks like an encoded password.
+- Verification: Java compilation covers the ViewModel-to-repository registration path; the final Android test build verifies the UI-linked code, while device execution is listed separately when unavailable.

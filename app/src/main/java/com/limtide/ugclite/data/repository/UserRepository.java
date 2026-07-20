@@ -100,9 +100,7 @@ public class UserRepository {
                     loginResult.postValue(new LoginResult(false, "用户名已存在", null));
                     return;
                 }
-                if (!passwordHasher.isEncoded(user.getPassword())) {
-                    user.setPassword(passwordHasher.hash(user.getPassword()));
-                }
+                user.setPassword(passwordHasher.hash(user.getPassword()));
 
 
                 long result = userDao.insertUser(user);

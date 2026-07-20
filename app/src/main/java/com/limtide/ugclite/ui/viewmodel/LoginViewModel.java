@@ -211,6 +211,36 @@ public class LoginViewModel extends AndroidViewModel {
     }
 
 
+    public void register() {
+        String usernameValue = username.getValue();
+        String passwordValue = password.getValue();
+
+        if (usernameValue == null || passwordValue == null) {
+            errorMessage.setValue("Registration requires a username and password");
+            return;
+        }
+
+        validateUsername(usernameValue);
+        validatePassword(passwordValue);
+
+        Boolean isFormValid = isLoginFormValid.getValue();
+        if (isFormValid == null || !isFormValid) {
+            return;
+        }
+
+        isLoading.setValue(true);
+        clearErrorMessage();
+
+        String normalizedUsername = usernameValue.trim();
+        User user = new User(
+                normalizedUsername,
+                passwordValue,
+                normalizedUsername,
+                "",
+                "");
+        userRepository.createUser(user);
+    }
+
     public void onRegisterClick() {
         successMessage.setValue("注册功能开发中，敬请期待");
     }

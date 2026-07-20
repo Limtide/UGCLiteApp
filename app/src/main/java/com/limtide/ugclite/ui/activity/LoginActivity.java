@@ -150,7 +150,7 @@ public class LoginActivity extends AppCompatActivity {
         // 注册提示
         binding.tvRegisterHint.setOnClickListener(v -> {
             Log.d(TAG, "Register hint clicked");
-            loginViewModel.onRegisterClick();
+            loginViewModel.register();
         });
     }
 
