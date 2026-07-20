@@ -192,9 +192,9 @@ public class ApiService {
             try {
                 FeedResponse feedResponse = gson.fromJson(responseBody, FeedResponse.class);
                 //业务逻辑判断
-                if (feedResponse != null) {
+                if (feedResponse != null && feedResponse.hasRecognizedStatus()) {
                     if (feedResponse.isSuccess()) {
-                        List<Post> posts = feedResponse.postList;
+                        List<Post> posts = feedResponse.getPosts();
                         boolean hasMore = feedResponse.hasMoreData();
                         Log.d(TAG, "数据解析成功（对象格式），获取到 " + (posts != null ? posts.size() : 0) + " 条数据，hasMore: " + hasMore);
 
@@ -203,7 +203,8 @@ public class ApiService {
                         }
                         return;
                     } else {
-                        String errorMsg = "API返回错误，状态码: " + feedResponse.statusCode;
+                        Integer responseCode = feedResponse.code != null ? feedResponse.code : feedResponse.statusCode;
+                        String errorMsg = "API返回错误，状态码: " + responseCode;
                         Log.e(TAG, errorMsg);
                         if (callback != null) {
                             callback.onError(errorMsg);

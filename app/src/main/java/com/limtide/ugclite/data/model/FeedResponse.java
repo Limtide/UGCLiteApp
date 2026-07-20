@@ -10,7 +10,13 @@ import java.util.List;
 public class FeedResponse {
 
     @SerializedName("status_code")
-    public int statusCode; // 状态码（0：成功，其它：失败）
+    public Integer statusCode; // 旧接口状态码（0：成功，其它：失败）
+
+    @SerializedName("code")
+    public Integer code; // README 接口状态码（200：成功）
+
+    @SerializedName("message")
+    public String message;
 
     @SerializedName("has_more")
     public int hasMore; // 是否还有更多作品（取值：0或1）
@@ -18,11 +24,25 @@ public class FeedResponse {
     @SerializedName("post_list")
     public List<Post> postList; // 作品列表
 
+    @SerializedName("data")
+    public List<Post> data; // README 接口作品列表
+
+    public boolean hasRecognizedStatus() {
+        return code != null || statusCode != null;
+    }
+
     /**
      * 判断API请求是否成功
      */
     public boolean isSuccess() {
-        return statusCode == 0;
+        if (code != null) {
+            return code == 200;
+        }
+        return statusCode != null && statusCode == 0;
+    }
+
+    public List<Post> getPosts() {
+        return data != null ? data : postList;
     }
 
     /**
@@ -36,8 +56,9 @@ public class FeedResponse {
     public String toString() {
         return "FeedResponse{" +
                 "statusCode=" + statusCode +
+                ", code=" + code +
                 ", hasMore=" + hasMore +
-                ", postList.size()=" + (postList != null ? postList.size() : 0) +
+                ", posts.size()=" + (getPosts() != null ? getPosts().size() : 0) +
                 '}';
     }
 }
