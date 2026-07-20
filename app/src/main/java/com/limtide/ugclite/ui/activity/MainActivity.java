@@ -139,7 +139,7 @@ public class MainActivity extends AppCompatActivity {
             } catch (IllegalArgumentException exception) {
                 currentTab = TabState.HOME;
             }
-            currentFragment = currentTab == TabState.PROFILE ? profileFragment : homeFragment;
+            currentFragment = !profileFragment.isHidden() ? profileFragment : homeFragment;
         } else {
             currentFragment = homeFragment;
             currentTab = null;

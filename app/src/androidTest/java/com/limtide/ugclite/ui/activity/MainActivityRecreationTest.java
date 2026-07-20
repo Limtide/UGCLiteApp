@@ -52,4 +52,39 @@ public class MainActivityRecreationTest {
             });
         }
     }
+
+    @Test
+    public void recreateAfterPlaceholderTab_hidesPreviouslyVisibleProfileWhenHomeSelected() {
+        try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
+            scenario.onActivity(activity -> {
+                FragmentManager manager = activity.getSupportFragmentManager();
+                manager.executePendingTransactions();
+
+                activity.findViewById(R.id.profile_tab).performClick();
+                manager.executePendingTransactions();
+                activity.findViewById(R.id.friends_tab).performClick();
+                manager.executePendingTransactions();
+
+                ProfileFragment profile = (ProfileFragment) manager.findFragmentByTag("profile");
+                assertNotNull(profile);
+                assertFalse(profile.isHidden());
+            });
+
+            scenario.recreate();
+            scenario.onActivity(activity -> {
+                FragmentManager manager = activity.getSupportFragmentManager();
+                manager.executePendingTransactions();
+                activity.findViewById(R.id.home_tab).performClick();
+                manager.executePendingTransactions();
+
+                HomeFragment home = (HomeFragment) manager.findFragmentByTag("home");
+                ProfileFragment profile = (ProfileFragment) manager.findFragmentByTag("profile");
+                assertEquals(2, manager.getFragments().size());
+                assertNotNull(home);
+                assertNotNull(profile);
+                assertFalse(home.isHidden());
+                assertTrue(profile.isHidden());
+            });
+        }
+    }
 }

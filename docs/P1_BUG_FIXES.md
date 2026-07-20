@@ -37,6 +37,7 @@
 - Root cause: every Activity creation added new Home and Profile fragments even though FragmentManager had already restored the old instances.
 - Fix: reuse fragments by tag, add only missing instances, and persist/restore the selected tab.
 - Regression coverage: `MainActivityRecreationTest` recreates the Activity and asserts exactly two root fragments with the Profile tab still visible.
+- Independent-review follow-up: restored `currentFragment` now follows the actually visible fragment, including Profile followed by a placeholder tab before recreation.
 
 ## P1-07 First-launch completion
 
