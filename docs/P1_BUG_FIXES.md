@@ -62,7 +62,7 @@
 
 - Root cause: passwords were stored as unsalted MD5 values and compared directly in a Room SQL query.
 - Fix: use salted PBKDF2 records with bounded iteration parsing and constant-time hash comparison; query users by username before verification.
-- Legacy handling: arbitrary MD5 records are rejected with a reset-required result; the known demo credential is regenerated as PBKDF2 because its source password is part of the demo fixture.
+- Legacy handling: an existing MD5 record is verified only during login migration; a correct password is immediately rehashed as PBKDF2, while an incorrect password remains rejected.
 - Regression coverage: `PasswordHasherTest` covers random salts, correct and incorrect passwords, Unicode, malformed/legacy values, and tampering.
 - Removed artifact: `MD5Utils.java` was deleted and remains recoverable from Git history.
 - Independent-review follow-up: production startup no longer seeds a public `demo/demo123` account; test fixtures must be created only inside test source sets.

@@ -63,10 +63,12 @@ public class UserRepository {
                     return;
                 }
                 if (passwordHasher.isLegacyMd5(user.getPassword())) {
-                    loginResult.postValue(new LoginResult(false, "凭据格式已过期，请重置密码", null));
-                    return;
-                }
-                if (!passwordHasher.verify(password, user.getPassword())) {
+                    if (!passwordHasher.verifyLegacyMd5(password, user.getPassword())) {
+                        loginResult.postValue(new LoginResult(false, "密码错误", null));
+                        return;
+                    }
+                    user.setPassword(passwordHasher.hash(password));
+                } else if (!passwordHasher.verify(password, user.getPassword())) {
                     loginResult.postValue(new LoginResult(false, "密码错误", null));
                     return;
                 }

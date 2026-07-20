@@ -48,4 +48,16 @@ public class PasswordHasherTest {
 
         assertFalse(hasher.verify("demo123", tampered));
     }
+
+    @Test
+    public void validLegacyMd5CanBeVerifiedOnceAndUpgraded() {
+        String legacyHashFor123456 = "e10adc3949ba59abbe56e057f20f883e";
+
+        assertTrue(hasher.verifyLegacyMd5("123456", legacyHashFor123456));
+        assertFalse(hasher.verifyLegacyMd5("wrong-password", legacyHashFor123456));
+
+        String upgraded = hasher.hash("123456");
+        assertTrue(hasher.verify("123456", upgraded));
+        assertFalse(hasher.isLegacyMd5(upgraded));
+    }
 }

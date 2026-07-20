@@ -1,6 +1,7 @@
 package com.limtide.ugclite.utils;
 
 import java.security.MessageDigest;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 
@@ -70,6 +71,21 @@ public final class PasswordHasher {
 
     public boolean isLegacyMd5(String storedValue) {
         return storedValue != null && storedValue.matches("(?i)^[0-9a-f]{32}$");
+    }
+
+    public boolean verifyLegacyMd5(String password, String storedValue) {
+        if (password == null || password.isEmpty() || !isLegacyMd5(storedValue)) {
+            return false;
+        }
+
+        try {
+            MessageDigest legacyDigest = MessageDigest.getInstance("MD5");
+            byte[] actual = legacyDigest.digest(password.getBytes(StandardCharsets.UTF_8));
+            byte[] expected = fromHex(storedValue);
+            return MessageDigest.isEqual(expected, actual);
+        } catch (java.security.NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("Legacy password migration is unavailable", exception);
+        }
     }
 
     private byte[] derive(char[] password, byte[] salt, int iterations) {
