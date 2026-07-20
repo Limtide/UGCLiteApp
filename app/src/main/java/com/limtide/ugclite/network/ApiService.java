@@ -186,7 +186,6 @@ public class ApiService {
             }
             //获取响应体字符串
             String responseBody = response.body() != null ? response.body().string() : "";
-            Log.d(TAG, "API响应内容: " + responseBody);
 
             // 先尝试作为FeedResponse对象解析
             try {

@@ -49,3 +49,9 @@
 - Fix: remove simulated auto-login and token generation; cold start now requires interactive login until a real authentication backend can validate a session.
 - Regression coverage: `forgedLocalSessionCannotAutoLogin` proves that even a fully populated forged local state cannot bypass login.
 - Product impact: the remember option preserves the user's preference only; it no longer grants automatic authentication.
+
+## P1-09 Sensitive logging
+
+- Root cause: startup dumped every preference value, API handling logged full response bodies, and login paths logged identity values.
+- Fix: remove preference dumps and response-body logging, and replace identity-bearing messages with fixed event text.
+- Verification: a source scan confirms that `printAllPreferences` and full response logging no longer exist.

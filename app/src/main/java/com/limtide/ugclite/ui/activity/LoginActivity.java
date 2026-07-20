@@ -164,19 +164,16 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
                 // 输入前的处理逻辑
-                Log.d(TAG, "before Username changed: " + s.toString());
             }
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                Log.d(TAG, "Username changed: " + s.toString());
                 loginViewModel.setUsername(s.toString());
             }
 
             @Override
             public void afterTextChanged(Editable s) {
                 // 输入后的处理逻辑
-                Log.d(TAG, "after Username changed: " + s.toString());
             }
         });
 
@@ -267,9 +264,7 @@ public class LoginActivity extends AppCompatActivity {
                     false                       // 无服务端验证时禁止自动登录
             );
 
-            Log.d(TAG, "保存登录状态 - 用户: " + username +
-                      ", 记住登录: " + rememberLogin +
-                      ", 自动登录: false");
+            Log.d(TAG, "登录状态已保存");
         }
     }
 

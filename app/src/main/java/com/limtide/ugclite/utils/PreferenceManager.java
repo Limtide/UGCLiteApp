@@ -58,7 +58,7 @@ public class PreferenceManager {
                 .putString(KEY_USER_NAME, username)
                 .putLong(KEY_LOGIN_TIME, System.currentTimeMillis())
                 .apply();
-        Log.d(TAG, "保存用户名: " + username);
+        Log.d(TAG, "用户名已保存");
     }
 
     /**
@@ -75,7 +75,7 @@ public class PreferenceManager {
         prefs.edit()
                 .putString(KEY_USER_ID, userId)
                 .apply();
-        Log.d(TAG, "保存用户ID: " + userId);
+        Log.d(TAG, "用户ID已保存");
     }
 
     /**
@@ -111,9 +111,7 @@ public class PreferenceManager {
         editor.putLong(KEY_LOGIN_TIME, System.currentTimeMillis());
         editor.apply();
 
-        Log.d(TAG, "保存登录状态 - 用户: " + username + ", ID: " + userId +
-                  ", 方法: " + loginMethod + ", 记住登录: " + rememberLogin +
-                  ", 自动登录: " + autoLogin);
+        Log.d(TAG, "登录状态已持久化");
     }
 
     /**
@@ -387,18 +385,6 @@ public class PreferenceManager {
     public void clearAllPreferences() {
         prefs.edit().clear().apply();
         Log.d(TAG, "已清除所有偏好设置");
-    }
-
-    /**
-     * 打印所有存储的数据（调试用）
-     */
-    public void printAllPreferences() {
-        Log.d(TAG, "===== 所有SharedPreferences数据 =====");
-        for (String key : prefs.getAll().keySet()) {
-            Object value = prefs.getAll().get(key);
-            Log.d(TAG, key + ": " + value);
-        }
-        Log.d(TAG, "================================");
     }
 
     /**

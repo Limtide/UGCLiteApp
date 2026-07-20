@@ -29,7 +29,6 @@ public class AppStartupHelper {
         PreferenceManager prefs = PreferenceManager.getInstance(context);
 
         Log.d(TAG, "==== 应用启动流程检查 ====");
-        prefs.printAllPreferences();
 
         // 1. 检查是否首次启动
         boolean isFirstLaunch = prefs.isFirstLaunch();
