@@ -12,3 +12,9 @@
 - Fix: advance the offset after every successful page, using the raw response count rather than the filtered count.
 - Regression coverage: `FeedPaginationTest` covers refresh, load-more, and filtering-independent offset calculation.
 - Contract note: the current API exposes no `next_cursor`; this is the deterministic offset fallback until the backend provides one.
+
+## P1-03 Refresh request collision
+
+- Root cause: the ViewModel enabled the refresh spinner before the repository silently rejected an overlapping request.
+- Fix: use an atomic request gate, return whether a request started, and clear UI loading immediately when refresh is rejected.
+- Regression coverage: `FeedLoadGateTest` proves that overlapping requests are rejected atomically and the gate reopens after completion.

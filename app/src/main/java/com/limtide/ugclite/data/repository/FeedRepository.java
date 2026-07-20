@@ -23,7 +23,7 @@ public class FeedRepository {
     private final ApiService apiService;
     private final ExecutorService executorService;
 
-    private final AtomicBoolean isLoading = new AtomicBoolean(false);
+    private final FeedLoadGate loadGate = new FeedLoadGate();
     private final AtomicInteger currentCursor = new AtomicInteger(0);
     private final AtomicBoolean hasMoreData = new AtomicBoolean(true);
 
@@ -47,10 +47,10 @@ public class FeedRepository {
         return instance;
     }
 
-    public void loadFeedData(boolean refresh) {
-        if (isLoading.get()) {
+    public boolean loadFeedData(boolean refresh) {
+        if (!loadGate.tryStart()) {
             Log.d(TAG, "数据正在加载中，跳过重复请求");
-            return;
+            return false;
         }
 
         if (refresh) {
@@ -59,7 +59,6 @@ public class FeedRepository {
             Log.d(TAG, "刷新数据，重置cursor");
         }
 
-        isLoading.set(true);
 
         int cursor = currentCursor.get();
         Log.d(TAG, "开始加载Feed数据，cursor: " + cursor + ", 数量: " + PAGE_SIZE);
@@ -74,7 +73,7 @@ public class FeedRepository {
                         currentCursor.set(FeedPagination.nextOffset(cursor, posts == null ? 0 : posts.size(), refresh));
 
                         hasMoreData.set(hasMore);
-                        isLoading.set(false);
+                        loadGate.finish();
 
                         FeedResult result = new FeedResult(
                                 true,
@@ -101,6 +100,7 @@ public class FeedRepository {
                 handleError(errorMessage);
             }
         });
+        return true;
     }
 
     private List<Post> filterPosts(List<Post> posts) {
@@ -133,7 +133,7 @@ public class FeedRepository {
     }
 
     private void handleError(String errorMessage) {
-        isLoading.set(false);
+        loadGate.finish();
         FeedResult result = new FeedResult(
                 false,
                 errorMessage,
@@ -150,7 +150,7 @@ public class FeedRepository {
     }
 
     public boolean isLoading() {
-        return isLoading.get();
+        return loadGate.isActive();
     }
 
     public boolean hasMoreData() {

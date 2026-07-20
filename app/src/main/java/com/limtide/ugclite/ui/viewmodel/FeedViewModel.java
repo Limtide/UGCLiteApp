@@ -102,7 +102,9 @@ public class FeedViewModel extends AndroidViewModel {
     public void refreshFeed() {
         Log.d(TAG, "刷新Feed数据");
         isLoading.postValue(true);
-        feedRepository.loadFeedData(true);
+        if (!feedRepository.loadFeedData(true)) {
+            isLoading.postValue(false);
+        }
     }
 
     public void loadMoreFeed() {
