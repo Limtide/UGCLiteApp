@@ -43,11 +43,6 @@ public interface UserDao {
     @Query("SELECT * FROM users WHERE username = :username")
     LiveData<User> getUserByUsernameLiveData(String username);
 
-    /**
-     * 根据用户名和密码验证用户登录
-     */
-    @Query("SELECT * FROM users WHERE username = :username AND password = :password AND isActive = 1")
-    User loginUser(String username, String password);
 
     /**
      * 检查用户名是否已存在

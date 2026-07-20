@@ -9,7 +9,7 @@ import androidx.lifecycle.MutableLiveData;
 import com.limtide.ugclite.database.AppDatabase;
 import com.limtide.ugclite.database.dao.UserDao;
 import com.limtide.ugclite.database.entity.User;
-import com.limtide.ugclite.utils.MD5Utils;
+import com.limtide.ugclite.utils.PasswordHasher;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -24,6 +24,7 @@ public class UserRepository {
     private final UserDao userDao;
     private final LiveData<List<User>> allActiveUsers;
     private final ExecutorService executorService;
+    private final PasswordHasher passwordHasher;
 
     // 登录状态LiveData
     private final MutableLiveData<LoginResult> loginResult = new MutableLiveData<>();
@@ -33,6 +34,7 @@ public class UserRepository {
         userDao = database.userDao();
         allActiveUsers = userDao.getAllActiveUsers();
         executorService = Executors.newSingleThreadExecutor();
+        passwordHasher = new PasswordHasher();
     }
 
 
@@ -52,21 +54,27 @@ public class UserRepository {
                     return;
                 }
 
-                User user = userDao.loginUser(username.trim(), password);
-                if (user != null) {
-                    // 更新最后登录时间
-                    user.updateLastLoginTime();
-                    userDao.updateUser(user);
-                    loginResult.postValue(new LoginResult(true, "登录成功", user));
-                } else {
-                    // 检查用户是否存在
-                    User existingUser = userDao.getUserByUsername(username.trim());
-                    if (existingUser == null) {
-                        loginResult.postValue(new LoginResult(false, "用户不存在", null));
-                    } else {
-                        loginResult.postValue(new LoginResult(false, "密码错误", null));
-                    }
+                User user = userDao.getUserByUsername(username.trim());
+                if (user == null) {
+                    loginResult.postValue(new LoginResult(false, "用户不存在", null));
+                    return;
                 }
+                if (!user.isActive()) {
+                    loginResult.postValue(new LoginResult(false, "账号已停用", null));
+                    return;
+                }
+                if (passwordHasher.isLegacyMd5(user.getPassword())) {
+                    loginResult.postValue(new LoginResult(false, "凭据格式已过期，请重置密码", null));
+                    return;
+                }
+                if (!passwordHasher.verify(password, user.getPassword())) {
+                    loginResult.postValue(new LoginResult(false, "密码错误", null));
+                    return;
+                }
+
+                user.updateLastLoginTime();
+                userDao.updateUser(user);
+                loginResult.postValue(new LoginResult(true, "登录成功", user));
             } catch (Exception e) {
                 loginResult.postValue(new LoginResult(false, "登录失败：" + e.getMessage(), null));
             }
@@ -91,6 +99,10 @@ public class UserRepository {
                     loginResult.postValue(new LoginResult(false, "用户名已存在", null));
                     return;
                 }
+                if (!passwordHasher.isEncoded(user.getPassword())) {
+                    user.setPassword(passwordHasher.hash(user.getPassword()));
+                }
+
 
                 long result = userDao.insertUser(user);
                 if (result > 0) {
@@ -121,10 +133,15 @@ public class UserRepository {
                 User existingUser = userDao.getUserByUsername("demo");
                 if (existingUser == null) {
 
-                   User userdemo = new User("demo", MD5Utils.encrypt("demo123"), "演示账号", "用于功能演示，密码：demo123", "");
+                    User userdemo = new User("demo", passwordHasher.hash("demo123"), "演示账号", "用于功能演示", "");
 
                     userDao.insertUsers(List.of(userdemo));
                     Log.d("UserRepository", "测试用户数据创建成功");
+                } else if (passwordHasher.isLegacyMd5(existingUser.getPassword())) {
+                    existingUser.setPassword(passwordHasher.hash("demo123"));
+                    existingUser.setSignature("用于功能演示");
+                    userDao.updateUser(existingUser);
+                    Log.d("UserRepository", "测试用户凭据已升级");
                 } else {
                     Log.d("UserRepository", "测试用户数据已存在");
                 }

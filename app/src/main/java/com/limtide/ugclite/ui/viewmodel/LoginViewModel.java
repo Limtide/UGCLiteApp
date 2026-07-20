@@ -10,7 +10,6 @@ import androidx.lifecycle.MutableLiveData;
 import com.limtide.ugclite.database.entity.User;
 import com.limtide.ugclite.data.repository.UserRepository;
 import com.limtide.ugclite.data.repository.UserRepository.LoginResult;
-import com.limtide.ugclite.utils.MD5Utils;
 
 /**
  * 登录页面的ViewModel
@@ -179,10 +178,8 @@ public class LoginViewModel extends AndroidViewModel {
         isLoading.setValue(true);
         clearErrorMessage();
 
-        String password =MD5Utils.encrypt(passwordValue);
-
-        // 执行登录
-        userRepository.loginUser(usernameValue.trim(), password);
+        // Repository verifies the raw password against its salted PBKDF2 record.
+        userRepository.loginUser(usernameValue.trim(), passwordValue);
 
 //        // 观察登录结果
 //        observeForever会导致内存泄漏，同时在viewmodel观察不符合MVVM模式

@@ -55,3 +55,11 @@
 - Root cause: startup dumped every preference value, API handling logged full response bodies, and login paths logged identity values.
 - Fix: remove preference dumps and response-body logging, and replace identity-bearing messages with fixed event text.
 - Verification: a source scan confirms that `printAllPreferences` and full response logging no longer exist.
+
+## P1-10 Password hashing
+
+- Root cause: passwords were stored as unsalted MD5 values and compared directly in a Room SQL query.
+- Fix: use salted PBKDF2 records with bounded iteration parsing and constant-time hash comparison; query users by username before verification.
+- Legacy handling: arbitrary MD5 records are rejected with a reset-required result; the known demo credential is regenerated as PBKDF2 because its source password is part of the demo fixture.
+- Regression coverage: `PasswordHasherTest` covers random salts, correct and incorrect passwords, Unicode, malformed/legacy values, and tampering.
+- Removed artifact: `MD5Utils.java` was deleted and remains recoverable from Git history.
