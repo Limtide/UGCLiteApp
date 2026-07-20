@@ -24,3 +24,9 @@
 - Root cause: clearing one page-level ViewModel shut down the executor owned by the process-wide repository singleton.
 - Fix: remove the ViewModel-triggered shutdown path; the singleton executor now remains valid for later Feed screens in the same process.
 - Verification: Java compilation covers the removed API call; lifecycle behavior is included in the final device-test checklist.
+
+## P1-05 Feed observer lifetime
+
+- Root cause: an anonymous `observeForever` observer kept cleared ViewModels reachable and continued delivering singleton results.
+- Fix: retain the Observer instance and remove it in `onCleared()`.
+- Verification: Java compilation verifies the observer type and removal path; repeated screen recreation remains in the device-test checklist.

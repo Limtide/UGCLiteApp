@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Observer;
 
 import com.limtide.ugclite.data.model.Post;
 import com.limtide.ugclite.data.repository.FeedRepository;
@@ -21,6 +22,7 @@ public class FeedViewModel extends AndroidViewModel {
     private static final String TAG = "FeedViewModel";
 
     private final FeedRepository feedRepository;
+    private Observer<FeedResult> feedResultObserver;
 
     private final MutableLiveData<List<Post>> feedPosts = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
@@ -37,7 +39,7 @@ public class FeedViewModel extends AndroidViewModel {
     }
 
     private void observeFeedResult() {
-        feedRepository.getFeedResult().observeForever(result -> {
+        feedResultObserver = result -> {
             if (result == null) {
                 return;
             }
@@ -83,7 +85,8 @@ public class FeedViewModel extends AndroidViewModel {
                 }
                 Log.e(TAG, "数据加载失败: " + result.getErrorMessage());
             }
-        });
+        };
+        feedRepository.getFeedResult().observeForever(feedResultObserver);
     }
 
     public void loadFeed() {
@@ -150,5 +153,6 @@ public class FeedViewModel extends AndroidViewModel {
     protected void onCleared() {
         super.onCleared();
         Log.d(TAG, "FeedViewModel被清理");
+        feedRepository.getFeedResult().removeObserver(feedResultObserver);
     }
 }
