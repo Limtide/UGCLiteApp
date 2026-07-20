@@ -338,30 +338,4 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * 紧急清理内存中的Post数据（针对9GB问题）
-     */
-    public void emergencyCleanupMemoryData() {
-        Log.w(TAG, "执行紧急内存数据清理");
-
-        try {
-            // 清理HomeFragment中的内存数据
-            if (homeFragment != null) {
-                homeFragment.emergencyCleanupMemory();
-            }
-
-            // 清理ProfileFragment中的内存数据（如果有的话）
-            if (profileFragment != null) {
-                // profileFragment.emergencyCleanupMemory(); // 如果有这个方法的话
-            }
-
-            // 强制垃圾回收
-            System.gc();
-
-            Log.w(TAG, "紧急内存数据清理完成");
-
-        } catch (Exception e) {
-            Log.e(TAG, "紧急内存清理失败", e);
-        }
-    }
 }
