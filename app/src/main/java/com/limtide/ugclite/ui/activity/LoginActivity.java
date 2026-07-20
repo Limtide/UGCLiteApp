@@ -8,6 +8,7 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
+import com.limtide.ugclite.database.entity.User;
 
 import com.limtide.ugclite.databinding.ActivityLoginBinding;
 import com.limtide.ugclite.utils.PreferenceManager;
@@ -94,6 +95,9 @@ public class LoginActivity extends AppCompatActivity {
             binding.btnLogin.setEnabled(!isLoading);
             binding.btnWechatLogin.setEnabled(!isLoading);
             binding.btnAppleLogin.setEnabled(!isLoading);
+            binding.etUsername.setEnabled(!isLoading);
+            binding.etPassword.setEnabled(!isLoading);
+            binding.tvRegisterHint.setEnabled(!isLoading);
 
             if (isLoading) {
                 binding.btnLogin.setText("登录中...");
@@ -108,7 +112,13 @@ public class LoginActivity extends AppCompatActivity {
                     // === 登录成功 ===
                     showSuccess(loginResult.getMessage());
                     // 保存用户、跳转主页
-                    saveCurrentUser();
+                    User authenticatedUser = loginResult.getUser();
+                    if (authenticatedUser == null) {
+                        loginViewModel.setIsLoading(false);
+                        showError("Authentication failed");
+                        return;
+                    }
+                    saveCurrentUser(authenticatedUser);
                     navigateToMain();
                 } else {
                     //应该在这里修改登录状态吗，在view层？
@@ -247,8 +257,8 @@ public class LoginActivity extends AppCompatActivity {
     /**
      * 保存当前登录用户信息到SharedPreferences
      */
-    private void saveCurrentUser() {
-        String username = loginViewModel.getUsername().getValue();
+    private void saveCurrentUser(User authenticatedUser) {
+        String username = authenticatedUser.getUsername();
         if (username != null && !username.trim().isEmpty()) {
             // 获取用户选择的设置
             boolean rememberLogin = binding.cbRememberPassword.isChecked();

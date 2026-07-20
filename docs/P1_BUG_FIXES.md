@@ -74,3 +74,10 @@
 - Fix: validate the entered username and password, create a local active user, hash the password with PBKDF2 unconditionally, and continue through the existing successful-authentication flow.
 - Security constraint: callers cannot bypass hashing by supplying a string that merely looks like an encoded password.
 - Verification: Java compilation covers the ViewModel-to-repository registration path; the final Android test build verifies the UI-linked code, while device execution is listed separately when unavailable.
+
+## P1-12 Asynchronous authentication identity confusion
+
+- Root cause: the login result authenticated one immutable User, but persistence reread a still-editable username field after the asynchronous database operation.
+- Fix: persist only the username carried by the successful LoginResult and fail closed if a success result has no User.
+- Concurrency guard: disable username, password, and registration controls while authentication or registration is in progress.
+- Verification: compilation covers the result-to-persistence contract; independent review checks that mutable input is no longer used after authentication.
