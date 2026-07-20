@@ -42,3 +42,10 @@
 - Root cause: `first_launch` defaulted to true and its completion method was never called, so startup never reached later authentication decisions.
 - Fix: when the app first presents its actual login UI, mark first launch complete without granting a login session.
 - Regression coverage: `completingFirstLaunchDoesNotGrantLogin` verifies the flag transition and confirms that authentication is still required.
+
+## P1-08 Fail-closed session handling
+
+- Root cause: the app generated a predictable token locally and treated local preference flags as successful server authentication.
+- Fix: remove simulated auto-login and token generation; cold start now requires interactive login until a real authentication backend can validate a session.
+- Regression coverage: `forgedLocalSessionCannotAutoLogin` proves that even a fully populated forged local state cannot bypass login.
+- Product impact: the remember option preserves the user's preference only; it no longer grants automatic authentication.

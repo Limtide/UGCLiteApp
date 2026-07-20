@@ -84,4 +84,29 @@ public class ExampleInstrumentedTest {
         }
     }
 
+
+    @Test
+    public void forgedLocalSessionCannotAutoLogin() {
+        Context testContext = InstrumentationRegistry.getInstrumentation().getContext();
+        PreferenceManager preferences = PreferenceManager.getInstance(testContext);
+        preferences.clearAllPreferences();
+
+        try {
+            preferences.setFirstLaunchComplete();
+            preferences.saveLoginState(
+                    "demo",
+                    "user_demo",
+                    "token_predictable",
+                    "normal",
+                    true,
+                    true);
+
+            AppStartupHelper.StartupResult result = AppStartupHelper.checkStartupFlow(testContext);
+
+            assertTrue(result.needLogin);
+            assertFalse(result.canAutoLogin);
+        } finally {
+            preferences.clearAllPreferences();
+        }
+    }
 }

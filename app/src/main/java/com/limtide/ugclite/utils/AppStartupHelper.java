@@ -54,17 +54,9 @@ public class AppStartupHelper {
             return new StartupResult(true, false, false, "登录过期");
         }
 
-        // 4. 检查是否启用自动登录
-        boolean isAutoLoginEnabled = prefs.isAutoLoginEnabled();
-        if (!isAutoLoginEnabled) {
-            Log.d(TAG, "用户未启用自动登录，需要显示登录页");
-            return new StartupResult(true, false, false, "未启用自动登录");
-        }
-
-        // 5. 可以自动登录，进入主应用
-        Log.d(TAG, "可以自动登录，直接进入主应用");
-        String currentUsername = prefs.getCurrentUsername();
-        return new StartupResult(false, true, true, currentUsername);
+        // 客户端没有认证服务，不能把本地标志当作可验证会话。
+        Log.d(TAG, "缺少服务端会话验证，需要重新登录");
+        return new StartupResult(true, false, false, "需要服务端会话验证");
     }
 
     /**

@@ -10,7 +10,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.limtide.ugclite.databinding.ActivityLoginBinding;
-import com.limtide.ugclite.utils.AppStartupHelper;
 import com.limtide.ugclite.utils.PreferenceManager;
 import com.limtide.ugclite.ui.viewmodel.LoginViewModel;
 
@@ -27,8 +26,6 @@ public class LoginActivity extends AppCompatActivity {
     // PreferenceManager
     private PreferenceManager preferenceManager;
 
-    // 自动登录模式标记
-    private boolean isAutoLoginMode = false;
 
     // 离线模式标记
     protected boolean is_offline_mode = false;
@@ -41,60 +38,9 @@ public class LoginActivity extends AppCompatActivity {
         // 1. 先初始化PreferenceManager
         preferenceManager = PreferenceManager.getInstance(this);
 
-        // 2. 检查自动登录（首次启动检查在MainActivity中处理）
-        if (checkAndHandleAutoLogin()) {
-            return; // 自动登录成功，直接跳转
-        }
 
         // 3. 如果不能自动登录，显示登录页面
         initializeLoginUI();
-    }
-
-    /**
-     * 检查并处理自动登录
-     * @return true 如果自动登录成功
-     */
-    private boolean checkAndHandleAutoLogin() {
-        Log.d(TAG, "==== 检查自动登录 ====");
-
-        // 使用AppStartupHelper检查启动流程
-        AppStartupHelper.StartupResult result = AppStartupHelper.checkStartupFlow(this);
-        Log.d(TAG, "启动流程检查结果: " + result.toString());
-
-        if (result.canAutoLogin) {
-            // 可以自动登录
-            Log.d(TAG, "自动登录成功，用户: " + result.reason);
-
-            // 设置自动登录模式标记，避免UI恢复和用户名重复写入
-            isAutoLoginMode = true;
-
-            performAutoLogin(result.reason);
-            return true;
-        }
-
-        // 不能自动登录，需要显示登录页面
-        Log.d(TAG, "需要登录，原因: " + result.reason);
-
-        // 重置自动登录模式标记
-        isAutoLoginMode = false;
-
-        return false;
-    }
-
-    /**
-     * 执行自动登录
-     */
-    private void performAutoLogin(String username) {
-        // 显示加载状态
-        showLoadingState(true);
-
-        // 这里可以调用后端API验证token有效性
-        // 为了演示，我们直接模拟成功
-        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-            showLoadingState(false);
-            android.widget.Toast.makeText(this, "欢迎回来，" + username + "！", android.widget.Toast.LENGTH_SHORT).show();
-            navigateToMain();
-        }, 1000);
     }
 
     /**
@@ -135,28 +81,9 @@ public class LoginActivity extends AppCompatActivity {
      * 恢复记住的登录信息
      */
     private void restoreLoginInfo() {
-        // 不再恢复保存的用户名，即使用户选择了记住密码
-        // String savedUsername = preferenceManager.getCurrentUsername();
         boolean rememberPassword = preferenceManager.isRememberLogin();
-
-        Log.d(TAG, "恢复登录信息 - 记住密码: " + rememberPassword + " (不恢复用户名)");
-
-        // 不再恢复用户名，即使用户选择了记住密码也不恢复
-        if (!isAutoLoginMode) {
-            // 用户名输入框保持空白，用户需要手动输入
-            // if (savedUsername != null && !savedUsername.trim().isEmpty()) {
-            //     binding.etUsername.setText(savedUsername);
-            //     binding.etUsername.setSelection(savedUsername.length()); // 移动光标到末尾
-            // } else {
-            //     Log.d(TAG, "保存的用户名为空或null，不恢复");
-            // }
-            Log.d(TAG, "不恢复用户名，用户需要手动输入");
-
-            // 只恢复记住密码状态
-            binding.cbRememberPassword.setChecked(rememberPassword);
-        } else {
-            Log.d(TAG, "自动登录模式，跳过UI恢复");
-        }
+        Log.d(TAG, "恢复登录选项: " + rememberPassword);
+        binding.cbRememberPassword.setChecked(rememberPassword);
     }
 
     /**
@@ -334,15 +261,15 @@ public class LoginActivity extends AppCompatActivity {
             preferenceManager.saveLoginState(
                     username.trim(),           // 用户名
                     generateUserId(username),    // 用户ID（简化生成）
-                    generateSessionToken(),      // Session Token（简化生成）
+                    null,                        // 无服务端签发的Session Token
                     "normal",                 // 登录方式
                     rememberLogin,             // 是否记住登录
-                    rememberLogin              // 是否自动登录（和记住密码一致）
+                    false                       // 无服务端验证时禁止自动登录
             );
 
             Log.d(TAG, "保存登录状态 - 用户: " + username +
                       ", 记住登录: " + rememberLogin +
-                      ", 自动登录: " + rememberLogin);
+                      ", 自动登录: false");
         }
     }
 
@@ -355,15 +282,6 @@ public class LoginActivity extends AppCompatActivity {
         }
         // 简单的哈希生成用户ID
         return "user_" + Math.abs(username.hashCode()) + "_" + System.currentTimeMillis();
-    }
-
-    /**
-     * 生成会话令牌（简化版）
-     */
-    private String generateSessionToken() {
-        // 使用当前时间戳和随机数生成简单的token
-        return "token_" + System.currentTimeMillis() + "_" +
-               Integer.toString((int)(Math.random() * 10000));
     }
 
     /**
