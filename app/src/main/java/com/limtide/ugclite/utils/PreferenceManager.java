@@ -101,8 +101,8 @@ public class PreferenceManager {
                               String loginMethod, boolean rememberLogin, boolean autoLogin) {
         SharedPreferences.Editor editor = prefs.edit();
         editor.putBoolean(KEY_IS_LOGGED_IN, true);
-        // 不再保存用户名，即使记住密码也不保存
-        // editor.putString(KEY_USER_NAME, username);
+        // 保存用户名，确保登录状态能够在后续启动和个人页中恢复
+        editor.putString(KEY_USER_NAME, username);
         editor.putString(KEY_USER_ID, userId);
         editor.putString(KEY_SESSION_TOKEN, sessionToken);
         editor.putString(KEY_LOGIN_METHOD, loginMethod);
@@ -113,7 +113,7 @@ public class PreferenceManager {
 
         Log.d(TAG, "保存登录状态 - 用户: " + username + ", ID: " + userId +
                   ", 方法: " + loginMethod + ", 记住登录: " + rememberLogin +
-                  ", 自动登录: " + autoLogin + " (不保存用户名)");
+                  ", 自动登录: " + autoLogin);
     }
 
     /**

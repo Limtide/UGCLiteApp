@@ -14,6 +14,8 @@ import androidx.fragment.app.Fragment;
 
 import com.limtide.ugclite.databinding.FragmentProfileBinding;
 import com.limtide.ugclite.data.repository.UserRepository;
+import com.limtide.ugclite.utils.AppStartupHelper;
+import com.limtide.ugclite.utils.PreferenceManager;
 import androidx.lifecycle.Observer;
 import com.limtide.ugclite.database.entity.User;
 
@@ -23,6 +25,7 @@ public class ProfileFragment extends Fragment {
     private static final String TAG = "ProfileFragment";
 
     private UserRepository userRepository;
+    private PreferenceManager preferenceManager;
 
     @Nullable
     @Override
@@ -32,6 +35,7 @@ public class ProfileFragment extends Fragment {
 
         // 初始化UserRepository
         userRepository = new UserRepository(requireActivity().getApplication());
+        preferenceManager = PreferenceManager.getInstance(requireContext());
 
         // 加载当前用户信息
         loadCurrentUser();
@@ -47,10 +51,8 @@ public class ProfileFragment extends Fragment {
      * 加载当前登录用户信息
      */
     private void loadCurrentUser() {
-        // 从SharedPreferences获取当前用户名
-        String currentUsername = requireActivity()
-                .getSharedPreferences("user_prefs", 0)
-                .getString("current_username", null);
+        // 从统一的登录状态存储获取当前用户名
+        String currentUsername = preferenceManager.getCurrentUsername();
 
         if (currentUsername != null && !currentUsername.trim().isEmpty()) {
             Log.d(TAG, "Loading user info for: " + currentUsername);
@@ -142,22 +144,15 @@ public class ProfileFragment extends Fragment {
      * 退出登录，清除当前用户信息
      */
     private void logoutCurrentUser() {
-        // 清除SharedPreferences中的当前用户信息
-        requireActivity().getSharedPreferences("user_prefs", 0)
-                .edit()
-                .remove("current_username")
-                .remove("login_time")
-                .apply();
+        // 清除统一的登录状态
+        preferenceManager.clearLoginState();
 
         // 更新UI显示默认信息
         showDefaultUserInfo();
 
         Log.d(TAG, "User logged out successfully");
 
-        // 可以选择跳转到登录页面
-        // Intent intent = new Intent(requireContext(), LoginActivity.class);
-        // startActivity(intent);
-        // requireActivity().finish();
+        startActivity(AppStartupHelper.createLoginIntent(requireContext()));
     }
 
     @Override

@@ -5,6 +5,8 @@ import android.content.Context;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
+import com.limtide.ugclite.utils.PreferenceManager;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -22,5 +24,37 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
         assertEquals("com.limtide.ugclite", appContext.getPackageName());
+    }
+
+    @Test
+    public void loginStatePersistsRequiredIdentityAndClearsOnLogout() {
+        Context testContext = InstrumentationRegistry.getInstrumentation().getContext();
+        PreferenceManager preferences = PreferenceManager.getInstance(testContext);
+        preferences.clearAllPreferences();
+
+        try {
+            preferences.saveLoginState(
+                    "demo",
+                    "user_demo",
+                    "session_demo",
+                    "normal",
+                    true,
+                    true
+            );
+
+            assertEquals("demo", preferences.getCurrentUsername());
+            assertEquals("user_demo", preferences.getCurrentUserId());
+            assertTrue(preferences.isLoggedIn());
+            assertTrue(preferences.isAutoLoginEnabled());
+
+            preferences.clearLoginState();
+
+            assertFalse(preferences.isLoggedIn());
+            assertNull(preferences.getCurrentUsername());
+            assertNull(preferences.getCurrentUserId());
+            assertNull(preferences.getSessionToken());
+        } finally {
+            preferences.clearAllPreferences();
+        }
     }
 }
