@@ -48,11 +48,21 @@ public class FeedRepository {
     }
 
     public boolean loadFeedData(boolean refresh) {
-        if (!loadGate.tryStart()) {
-            Log.d(TAG, "数据正在加载中，跳过重复请求");
+        FeedLoadGate.Decision decision = loadGate.request(refresh);
+        if (decision == FeedLoadGate.Decision.REJECTED) {
+            Log.d(TAG, "数据正在加载中，跳过重复分页请求");
             return false;
         }
+        if (decision == FeedLoadGate.Decision.QUEUED) {
+            Log.d(TAG, "数据正在加载中，已排队刷新请求");
+            return true;
+        }
 
+        executeFeedRequest(refresh);
+        return true;
+    }
+
+    private void executeFeedRequest(boolean refresh) {
         if (refresh) {
             currentCursor.set(0);
             hasMoreData.set(true);
@@ -68,12 +78,16 @@ public class FeedRepository {
             public void onSuccess(List<Post> posts, boolean hasMore) {
                 executorService.execute(() -> {
                     try {
+                        if (loadGate.hasQueuedRefresh()) {
+                            finishRequest();
+                            return;
+                        }
                         List<Post> filteredPosts = filterPosts(posts);
+
 
                         currentCursor.set(FeedPagination.nextOffset(cursor, posts == null ? 0 : posts.size(), refresh));
 
                         hasMoreData.set(hasMore);
-                        loadGate.finish();
 
                         FeedResult result = new FeedResult(
                                 true,
@@ -88,19 +102,19 @@ public class FeedRepository {
                                 ", 过滤后: " + filteredPosts.size() +
                                 ", hasMore: " + hasMore +
                                 ", cursor: " + currentCursor.get());
+                        finishRequest();
                     } catch (Exception e) {
                         Log.e(TAG, "处理数据时发生异常", e);
-                        handleError("数据处理异常: " + e.getMessage());
+                        handleError("数据处理异常: " + e.getMessage(), refresh);
                     }
                 });
             }
 
             @Override
             public void onError(String errorMessage) {
-                handleError(errorMessage);
+                handleError(errorMessage, refresh);
             }
         });
-        return true;
     }
 
     private List<Post> filterPosts(List<Post> posts) {
@@ -132,16 +146,26 @@ public class FeedRepository {
         return false;
     }
 
-    private void handleError(String errorMessage) {
-        loadGate.finish();
+    private void finishRequest() {
+        if (loadGate.completeAndShouldStartRefresh()) {
+            executeFeedRequest(true);
+        }
+    }
+
+    private void handleError(String errorMessage, boolean refresh) {
+        if (loadGate.hasQueuedRefresh()) {
+            finishRequest();
+            return;
+        }
         FeedResult result = new FeedResult(
                 false,
                 errorMessage,
                 null,
                 false,
-                false
+                refresh
         );
         feedResult.postValue(result);
+        finishRequest();
         Log.e(TAG, "数据加载失败: " + errorMessage);
     }
 

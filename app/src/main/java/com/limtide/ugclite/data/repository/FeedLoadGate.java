@@ -1,20 +1,42 @@
 package com.limtide.ugclite.data.repository;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 final class FeedLoadGate {
 
-    private final AtomicBoolean active = new AtomicBoolean(false);
-
-    boolean tryStart() {
-        return active.compareAndSet(false, true);
+    enum Decision {
+        STARTED,
+        QUEUED,
+        REJECTED
     }
 
-    void finish() {
-        active.set(false);
+    private boolean active;
+    private boolean refreshQueued;
+
+    synchronized Decision request(boolean refresh) {
+        if (!active) {
+            active = true;
+            return Decision.STARTED;
+        }
+        if (refresh) {
+            refreshQueued = true;
+            return Decision.QUEUED;
+        }
+        return Decision.REJECTED;
     }
 
-    boolean isActive() {
-        return active.get();
+    synchronized boolean hasQueuedRefresh() {
+        return refreshQueued;
+    }
+
+    synchronized boolean completeAndShouldStartRefresh() {
+        if (refreshQueued) {
+            refreshQueued = false;
+            return true;
+        }
+        active = false;
+        return false;
+    }
+
+    synchronized boolean isActive() {
+        return active;
     }
 }
