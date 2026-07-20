@@ -1,4 +1,4 @@
-package com.limtide.ugclite.data.model;
+package com.limtide.ugclite.data.repository;
 
 import android.util.Log;
 
