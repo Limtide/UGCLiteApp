@@ -157,12 +157,6 @@ public class FeedRepository {
         return hasMoreData.get();
     }
 
-    public void cleanup() {
-        if (executorService != null && !executorService.isShutdown()) {
-            executorService.shutdown();
-        }
-    }
-
     public static class FeedResult {
         private final boolean success;
         private final String errorMessage;

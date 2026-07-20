@@ -18,3 +18,9 @@
 - Root cause: the ViewModel enabled the refresh spinner before the repository silently rejected an overlapping request.
 - Fix: use an atomic request gate, return whether a request started, and clear UI loading immediately when refresh is rejected.
 - Regression coverage: `FeedLoadGateTest` proves that overlapping requests are rejected atomically and the gate reopens after completion.
+
+## P1-04 Feed repository executor lifetime
+
+- Root cause: clearing one page-level ViewModel shut down the executor owned by the process-wide repository singleton.
+- Fix: remove the ViewModel-triggered shutdown path; the singleton executor now remains valid for later Feed screens in the same process.
+- Verification: Java compilation covers the removed API call; lifecycle behavior is included in the final device-test checklist.

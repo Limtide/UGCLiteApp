@@ -150,6 +150,5 @@ public class FeedViewModel extends AndroidViewModel {
     protected void onCleared() {
         super.onCleared();
         Log.d(TAG, "FeedViewModel被清理");
-        feedRepository.cleanup();
     }
 }
