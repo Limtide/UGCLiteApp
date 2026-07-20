@@ -107,6 +107,10 @@ public class LoginActivity extends AppCompatActivity {
         binding = ActivityLoginBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        if (preferenceManager.isFirstLaunch()) {
+            preferenceManager.setFirstLaunchComplete();
+        }
+
         // 初始化ViewModel
         loginViewModel = new ViewModelProvider(this,
                 new ViewModelProvider.AndroidViewModelFactory(getApplication()))

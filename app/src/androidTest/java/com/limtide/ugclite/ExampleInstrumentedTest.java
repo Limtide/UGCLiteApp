@@ -6,6 +6,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.limtide.ugclite.utils.PreferenceManager;
+import com.limtide.ugclite.utils.AppStartupHelper;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -57,4 +58,30 @@ public class ExampleInstrumentedTest {
             preferences.clearAllPreferences();
         }
     }
+
+    @Test
+    public void completingFirstLaunchDoesNotGrantLogin() {
+        Context testContext = InstrumentationRegistry.getInstrumentation().getContext();
+        PreferenceManager preferences = PreferenceManager.getInstance(testContext);
+        preferences.clearAllPreferences();
+
+        try {
+            AppStartupHelper.StartupResult firstLaunch =
+                    AppStartupHelper.checkStartupFlow(testContext);
+            assertTrue(firstLaunch.needLogin);
+            assertFalse(firstLaunch.canAutoLogin);
+            assertTrue(preferences.isFirstLaunch());
+
+            preferences.setFirstLaunchComplete();
+
+            AppStartupHelper.StartupResult laterLaunch =
+                    AppStartupHelper.checkStartupFlow(testContext);
+            assertFalse(preferences.isFirstLaunch());
+            assertTrue(laterLaunch.needLogin);
+            assertFalse(laterLaunch.canAutoLogin);
+        } finally {
+            preferences.clearAllPreferences();
+        }
+    }
+
 }
