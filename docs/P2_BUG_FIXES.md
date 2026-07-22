@@ -92,3 +92,10 @@
 - Fix: FeedLoadGate now atomically chooses either to publish the completed result or consume the queued refresh and keep the gate active for the replacement request.
 - Ordering behavior: a refresh linearized before completion suppresses the old success or error result; a refresh arriving after publication starts as the next request.
 - Regression coverage: FeedLoadGateTest verifies stale-result suppression, active-state continuity, normal publication, and subsequent request admission.
+
+## P2-14 Feed pagination performs full adapter replacement
+
+- Root cause: every accumulated Feed update cleared and recopied the entire adapter list, then called notifyDataSetChanged, causing repeated image rebinds and cumulative work as pages grew.
+- Fix: detect the shared object-identity prefix produced by FeedListMerger; append only the new suffix and call notifyItemRangeInserted for pagination.
+- Refresh behavior: a shorter list or different object prefix still performs a full replacement so changed content is never mistaken for an append.
+- Regression coverage: AppendOnlyListUpdateTest covers append, unchanged, refreshed-object, and shrinking-list classifications.

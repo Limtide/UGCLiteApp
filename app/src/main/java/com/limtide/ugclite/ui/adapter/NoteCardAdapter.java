@@ -400,37 +400,36 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
      * 设置新数据（替换所有数据） - 线程安全
      */
     public void setPosts(List<Post> posts) {
-        // 使用写锁保护替换操作
+        List<Post> safePosts = posts == null ? Collections.emptyList() : posts;
+        int appendStart;
+        int insertedCount = 0;
+        boolean replaced = false;
+
         dataLock.writeLock().lock();
         try {
-            // 清空现有数据
-            postList.clear();
-
-            if (posts != null && !posts.isEmpty()) {
-                // 创建副本避免并发修改
-                List<Post> postsCopy = new ArrayList<>(posts);
-                postList.addAll(postsCopy);
-
-                Log.d(TAG, "Thread-safe setPosts added successfully:");
-                for (int i = 0; i < Math.min(postsCopy.size(), 5); i++) {
-                    Post post = postsCopy.get(i);
-                    Log.d(TAG, "Post " + i + ": " + (post != null && post.title != null ? post.title : "null"));
+            appendStart = AppendOnlyListUpdate.appendStart(postList, safePosts);
+            if (appendStart >= 0) {
+                insertedCount = safePosts.size() - appendStart;
+                if (insertedCount > 0) {
+                    postList.addAll(new ArrayList<>(
+                            safePosts.subList(appendStart, safePosts.size())));
                 }
             } else {
-                Log.w(TAG, "setPosts called with null or empty posts");
+                postList.clear();
+                postList.addAll(new ArrayList<>(safePosts));
+                replaced = true;
             }
-
-            int finalSize = postList.size();
-            Log.d(TAG, "Thread-safe set " + (posts != null ? posts.size() : 0) + " posts, new total: " + finalSize);
-            Log.d(TAG, "onItemClickListener is " + (onItemClickListener != null ? "not null" : "null"));
-
-            // 在锁保护下进行通知，确保状态一致性
-            notifyDataSetChanged();
-
-        } catch (Exception e) {
-            Log.e(TAG, "Error in setPosts: " + e.getMessage(), e);
         } finally {
             dataLock.writeLock().unlock();
+        }
+
+        if (replaced) {
+            notifyDataSetChanged();
+            Log.d(TAG, "Feed data replaced, total: " + safePosts.size());
+        } else if (insertedCount > 0) {
+            notifyItemRangeInserted(appendStart, insertedCount);
+            Log.d(TAG, "Feed page appended, start: " + appendStart
+                    + ", count: " + insertedCount);
         }
     }
 
