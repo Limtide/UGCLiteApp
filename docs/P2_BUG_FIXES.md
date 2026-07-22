@@ -48,6 +48,7 @@
 - Fix: add a release flag and request generation; stale success, failure, and progress callbacks are ignored after release or after another URL replaces the request.
 - Defensive behavior: source-loading methods capture and validate the current MediaPlayer and handle IllegalStateException as a normal playback error.
 - Verification: Java compilation validates callback capture and lifecycle guards; final review checks release invalidates all outstanding generations.
+- Lint follow-up: brace and align both released-player guards so control flow is explicit and SuspiciousIndentation cannot mask an unconditional source load.
 
 ## P2-08 Manual media swipe creates inconsistent mute state
 

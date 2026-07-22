@@ -194,9 +194,11 @@ public class MusicPlayer {
     }
 
     private void loadMusicFromPath(String filePath) {
-        try {
         MediaPlayer player = mediaPlayer;
-        if (released || player == null) return;
+        if (released || player == null) {
+            return;
+        }
+        try {
             player.setDataSource(filePath);
             player.prepareAsync();
             Log.d(TAG, "从本地文件加载音乐: " + filePath);
@@ -213,7 +215,9 @@ public class MusicPlayer {
      */
     private void loadMusicFromUrl(String url) {
         MediaPlayer player = mediaPlayer;
-        if (released || player == null) return;
+        if (released || player == null) {
+            return;
+        }
         try {
             player.setDataSource(url);
             player.prepareAsync();
