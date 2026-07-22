@@ -48,3 +48,10 @@
 - Fix: add a release flag and request generation; stale success, failure, and progress callbacks are ignored after release or after another URL replaces the request.
 - Defensive behavior: source-loading methods capture and validate the current MediaPlayer and handle IllegalStateException as a normal playback error.
 - Verification: Java compilation validates callback capture and lifecycle guards; final review checks release invalidates all outstanding generations.
+
+## P2-08 Manual media swipe creates inconsistent mute state
+
+- Root cause: the page-change callback modified the Activity flag and video players directly without updating the persistent MuteManager.
+- Fix: manual swipe writes only through MuteManager.setMuted; its existing listener synchronizes the Activity flag, icon, video players, and music player.
+- Resume behavior: the persisted manager state remains authoritative after pause and resume.
+- Verification: Java compilation validates the single-state path; final review checks no direct swipe mutation remains.

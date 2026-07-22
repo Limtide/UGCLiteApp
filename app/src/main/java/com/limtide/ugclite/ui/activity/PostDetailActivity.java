@@ -1468,9 +1468,7 @@ public class PostDetailActivity extends AppCompatActivity {
 
             // 如果是手动滑动，自动静音
             if (isManualSwipe && !activity.isMuted) {
-                activity.isMuted = true;
-                activity.updateVolumeButtonIcon();
-                activity.muteAllVideoPlayers();
+                activity.muteManager.setMuted(true);
                 Log.d(activity.TAG, "Auto muted due to user swipe");
             }
 
