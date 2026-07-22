@@ -27,6 +27,7 @@
 - Fix: normalize a null list to an empty page, skip null posts and clips, and compute null-safe counts before publishing one success result.
 - Reliability behavior: malformed entries are discarded without failing the complete page or generating a second error event.
 - Regression coverage: FeedPostFilterTest covers null lists, null entries, supported clips, and unsupported clips.
+- Independent-review follow-up: normalize each retained post to a new clip list containing only non-null supported media, so mixed malformed lists cannot crash home or detail consumers.
 
 ## P2-05 CacheManager callbacks and Glide memory cleanup never run
 

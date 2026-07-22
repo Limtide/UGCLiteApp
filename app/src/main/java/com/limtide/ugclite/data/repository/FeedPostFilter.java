@@ -16,22 +16,24 @@ final class FeedPostFilter {
         }
 
         for (Post post : posts) {
-            if (isVisible(post)) {
+            if (normalizeVisibleClips(post)) {
                 filtered.add(post);
             }
         }
         return filtered;
     }
 
-    private static boolean isVisible(Post post) {
+    private static boolean normalizeVisibleClips(Post post) {
         if (post == null || post.clips == null || post.clips.isEmpty()) {
             return false;
         }
+        List<Post.Clip> visibleClips = new ArrayList<>();
         for (Post.Clip clip : post.clips) {
             if (clip != null && (clip.type == 0 || clip.type == 1)) {
-                return true;
+                visibleClips.add(clip);
             }
         }
-        return false;
+        post.clips = visibleClips;
+        return !visibleClips.isEmpty();
     }
 }

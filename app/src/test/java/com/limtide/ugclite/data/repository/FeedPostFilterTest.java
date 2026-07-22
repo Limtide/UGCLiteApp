@@ -9,6 +9,7 @@ import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertSame;
 
 public class FeedPostFilterTest {
     @Test
@@ -48,4 +49,30 @@ public class FeedPostFilterTest {
         assertTrue(FeedPostFilter.visiblePosts(
                 Collections.singletonList(post)).isEmpty());
     }
+    @Test
+    public void mixedClipListsAreNormalizedBeforePublication() {
+        Post.Clip valid = new Post.Clip();
+        valid.type = 1;
+        Post.Clip unsupported = new Post.Clip();
+        unsupported.type = 9;
+
+        Post nullFirst = new Post();
+        nullFirst.clips = Arrays.asList(null, unsupported, valid);
+        Post nullLast = new Post();
+        nullLast.clips = Arrays.asList(valid, unsupported, null);
+
+        assertNormalizedToOnlyValidClip(nullFirst, valid);
+        assertNormalizedToOnlyValidClip(nullLast, valid);
+    }
+
+    private static void assertNormalizedToOnlyValidClip(Post post, Post.Clip valid) {
+        java.util.List<Post> visible = FeedPostFilter.visiblePosts(
+                Collections.singletonList(post));
+
+        assertEquals(1, visible.size());
+        assertEquals(1, visible.get(0).clips.size());
+        assertSame(valid, visible.get(0).clips.get(0));
+    }
+
+
 }
