@@ -63,7 +63,6 @@ public abstract class AppDatabase extends RoomDatabase {
                                     // 这里可以预埋测试账号
                                 }
                             })
-                            .fallbackToDestructiveMigration()
                             .build();
                 }
             }
