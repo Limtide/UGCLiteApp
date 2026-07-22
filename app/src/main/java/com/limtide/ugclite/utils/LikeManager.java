@@ -57,6 +57,12 @@ public class LikeManager {
                 PREFS_NAME,
                 AuthenticatedSession.getAuthenticatedUsername());
         prefs = appContext.getSharedPreferences(preferenceName, Context.MODE_PRIVATE);
+        LegacyInteractionMigration.claimStringSet(
+                appContext,
+                PREFS_NAME,
+                prefs,
+                KEY_LIKED_POSTS,
+                "like_prefs_claimed_v1");
         editor = prefs.edit();
         loadData();
     }

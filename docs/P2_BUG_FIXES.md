@@ -64,6 +64,8 @@
 - Fix: derive a non-identifying SHA-256 preference namespace from the authenticated username and reset both singleton caches whenever the authenticated identity changes or clears.
 - Privacy behavior: each account retains its own interactions without exposing them to another account on the same device.
 - Regression coverage: AccountPreferenceNamespaceTest covers stable namespaces, account separation, and removal of raw identity data from preference names.
+- Upgrade behavior: the first authenticated account after upgrade atomically claims each legacy global interaction set; a global marker prevents the same legacy data from being copied to later accounts, and existing namespaced data is never overwritten.
+- Migration coverage: LegacyMigrationDecisionTest covers copy-once, target preservation, completed migration, and no-legacy-data decisions.
 
 ## P2-10 Process session never expires
 

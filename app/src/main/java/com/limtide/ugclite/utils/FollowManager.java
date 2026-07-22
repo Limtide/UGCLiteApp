@@ -54,6 +54,12 @@ public class FollowManager {
                 PREFS_NAME,
                 AuthenticatedSession.getAuthenticatedUsername());
         prefs = appContext.getSharedPreferences(preferenceName, Context.MODE_PRIVATE);
+        LegacyInteractionMigration.claimStringSet(
+                appContext,
+                PREFS_NAME,
+                prefs,
+                KEY_FOLLOWED_USERS,
+                "follow_prefs_claimed_v1");
         editor = prefs.edit();
         loadData();
     }
