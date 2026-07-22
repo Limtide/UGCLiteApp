@@ -20,3 +20,10 @@
 - Fix: every successful refresh replaces the list, including an empty or null list, and every successful response updates hasMore.
 - UI behavior: HomeFragment now sends every non-null list to the adapter, allowing an empty refresh to remove previously clickable rows.
 - Regression coverage: FeedListMergerTest covers empty refresh, null normalization, append behavior, and non-mutation of the previous list.
+
+## P2-04 Null or malformed posts turn a successful page into an error
+
+- Root cause: Feed filtering and success logging dereferenced null lists, posts, and clips after the API callback reported success.
+- Fix: normalize a null list to an empty page, skip null posts and clips, and compute null-safe counts before publishing one success result.
+- Reliability behavior: malformed entries are discarded without failing the complete page or generating a second error event.
+- Regression coverage: FeedPostFilterTest covers null lists, null entries, supported clips, and unsupported clips.

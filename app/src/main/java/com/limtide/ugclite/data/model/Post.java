@@ -242,6 +242,9 @@ public class Post implements Parcelable, Serializable {
             dest.writeString(url);
         }
 
+        public Clip() {
+        }
+
         protected Clip(Parcel in) {
             type = in.readInt();
             width = in.readInt();

@@ -7,7 +7,6 @@ import androidx.lifecycle.MutableLiveData;
 import com.limtide.ugclite.data.model.Post;
 import com.limtide.ugclite.network.ApiService;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -82,10 +81,11 @@ public class FeedRepository {
                             finishRequest();
                             return;
                         }
-                        List<Post> filteredPosts = filterPosts(posts);
+                        int rawCount = posts == null ? 0 : posts.size();
+                        List<Post> filteredPosts = FeedPostFilter.visiblePosts(posts);
 
 
-                        currentCursor.set(FeedPagination.nextOffset(cursor, posts == null ? 0 : posts.size(), refresh));
+                        currentCursor.set(FeedPagination.nextOffset(cursor, rawCount, refresh));
 
                         hasMoreData.set(hasMore);
 
@@ -96,12 +96,12 @@ public class FeedRepository {
                                 hasMore,
                                 refresh
                         );
-                        feedResult.postValue(result);
 
-                        Log.d(TAG, "数据加载成功 - 原始: " + posts.size() +
-                                ", 过滤后: " + filteredPosts.size() +
-                                ", hasMore: " + hasMore +
-                                ", cursor: " + currentCursor.get());
+                        Log.d(TAG, "Feed loaded - raw: " + rawCount
+                                + ", visible: " + filteredPosts.size()
+                                + ", hasMore: " + hasMore
+                                + ", cursor: " + currentCursor.get());
+                        feedResult.postValue(result);
                         finishRequest();
                     } catch (Exception e) {
                         Log.e(TAG, "处理数据时发生异常", e);
@@ -117,34 +117,6 @@ public class FeedRepository {
         });
     }
 
-    private List<Post> filterPosts(List<Post> posts) {
-        if (posts == null || posts.isEmpty()) {
-            return posts;
-        }
-
-        List<Post> filteredPosts = new ArrayList<>();
-        for (Post post : posts) {
-            if (shouldShowPost(post)) {
-                filteredPosts.add(post);
-            }
-        }
-
-        return filteredPosts;
-    }
-
-    private boolean shouldShowPost(Post post) {
-        if (post.clips == null || post.clips.isEmpty()) {
-            return false;
-        }
-
-        for (Post.Clip clip : post.clips) {
-            if (clip.type == 0 || clip.type == 1) {
-                return true;
-            }
-        }
-
-        return false;
-    }
 
     private void finishRequest() {
         if (loadGate.completeAndShouldStartRefresh()) {
