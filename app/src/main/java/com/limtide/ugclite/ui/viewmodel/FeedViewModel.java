@@ -55,32 +55,23 @@ public class FeedViewModel extends AndroidViewModel {
             if (result.isSuccess()) {
                 errorMessage.postValue(null);
 
-                if (result.getPosts() != null && !result.getPosts().isEmpty()) {
-                    List<Post> currentPosts = feedPosts.getValue();
-                    if (currentPosts == null) {
-                        currentPosts = new ArrayList<>();
-                    }
+                List<Post> updatedPosts = FeedListMerger.merge(
+                        feedPosts.getValue(),
+                        result.getPosts(),
+                        result.isRefresh());
+                feedPosts.postValue(updatedPosts);
+                hasMoreData.postValue(result.hasMore());
 
-                    List<Post> updatedPosts;
-                    if (result.isRefresh()) {
-                        updatedPosts = new ArrayList<>(result.getPosts());
-                        Log.d(TAG, "刷新数据，替换所有数据，数量: " + updatedPosts.size());
-                    } else {
-                        updatedPosts = new ArrayList<>(currentPosts);
-                        updatedPosts.addAll(result.getPosts());
-                        Log.d(TAG, "加载更多数据，新增: " + result.getPosts().size() + "，总数: " + updatedPosts.size());
-                    }
-
-                    feedPosts.postValue(updatedPosts);
-                    hasMoreData.postValue(result.hasMore());
+                if (result.isRefresh()) {
+                    boolean empty = updatedPosts.isEmpty();
+                    isEmptyState.postValue(empty);
+                    Log.d(TAG, "Refresh replaced Feed, count: " + updatedPosts.size());
+                } else if (result.getPosts() != null && !result.getPosts().isEmpty()) {
                     isEmptyState.postValue(false);
+                    Log.d(TAG, "Load more appended: " + result.getPosts().size()
+                            + ", total: " + updatedPosts.size());
                 } else {
-                    if (result.isRefresh()) {
-                        isEmptyState.postValue(true);
-                        Log.d(TAG, "首次加载，没有数据");
-                    } else {
-                        Log.d(TAG, "加载更多，但没有新数据");
-                    }
+                    Log.d(TAG, "Load more returned no visible posts");
                 }
 
                 isFirstLoad.set(false);

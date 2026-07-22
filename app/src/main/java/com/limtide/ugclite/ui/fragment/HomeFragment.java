@@ -100,9 +100,11 @@ public class HomeFragment extends Fragment {
     private void setupObservers() {
         feedViewModel.getFeedPosts().observe(getViewLifecycleOwner(), posts -> {
             Log.d(TAG, "Feed数据更新: " + (posts != null ? posts.size() : 0) + " 条");
-            if (posts != null && !posts.isEmpty()) {
+            if (posts != null) {
                 notecardAdapter.setPosts(posts);
-                hideEmptyState();
+                if (!posts.isEmpty()) {
+                    hideEmptyState();
+                }
             }
         });
 

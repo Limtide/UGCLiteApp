@@ -13,3 +13,10 @@
 - Fix: remove the destructive production fallback and require an explicit migration for every supported schema upgrade.
 - Failure behavior: an unsupported schema now fails visibly instead of irreversibly deleting local accounts and profiles.
 - Verification: Java compilation validates the Room builder configuration; migration 1 to 2 remains explicitly registered.
+
+## P2-03 Empty refresh retains stale Feed content
+
+- Root cause: FeedViewModel only replaced posts and updated hasMore when a successful response contained visible posts.
+- Fix: every successful refresh replaces the list, including an empty or null list, and every successful response updates hasMore.
+- UI behavior: HomeFragment now sends every non-null list to the adapter, allowing an empty refresh to remove previously clickable rows.
+- Regression coverage: FeedListMergerTest covers empty refresh, null normalization, append behavior, and non-mutation of the previous list.
