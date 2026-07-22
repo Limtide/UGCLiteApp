@@ -62,3 +62,10 @@
 - Fix: derive a non-identifying SHA-256 preference namespace from the authenticated username and reset both singleton caches whenever the authenticated identity changes or clears.
 - Privacy behavior: each account retains its own interactions without exposing them to another account on the same device.
 - Regression coverage: AccountPreferenceNamespaceTest covers stable namespaces, account separation, and removal of raw identity data from preference names.
+
+## P2-10 Process session never expires
+
+- Root cause: AuthenticatedSession stored only a username, so a long-lived process remained authorized indefinitely.
+- Fix: record authentication time, enforce a 24-hour process-session TTL, and clear both memory and persisted display login state when the gate rejects access.
+- Fail-closed behavior: expired sessions are redirected to LoginActivity from every protected Activity.
+- Regression coverage: AuthenticatedSessionTest covers the TTL boundary and timestamp removal during logout.

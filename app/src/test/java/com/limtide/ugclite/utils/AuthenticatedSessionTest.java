@@ -33,6 +33,25 @@ public class AuthenticatedSessionTest {
         AuthenticatedSession.establish("   ");
     }
 
+
+    @Test
+    public void sessionExpiresAfterTtl() {
+        long authenticatedAt = 1_000L;
+        AuthenticatedSession.establishAt("alice", authenticatedAt);
+
+        assertTrue(AuthenticatedSession.isAuthenticatedAt(
+                authenticatedAt + AuthenticatedSession.SESSION_TTL_MILLIS));
+        assertFalse(AuthenticatedSession.isAuthenticatedAt(
+                authenticatedAt + AuthenticatedSession.SESSION_TTL_MILLIS + 1));
+        assertFalse(AuthenticatedSession.isAuthenticatedAt(authenticatedAt - 1));
+    }
+
+    @Test
+    public void clearingSessionRemovesAuthenticationTimestamp() {
+        AuthenticatedSession.establishAt("alice", 1_000L);
+        AuthenticatedSession.clear();
+        assertFalse(AuthenticatedSession.isAuthenticatedAt(1_001L));
+    }
     @Test
     public void logoutClearsSession() {
         AuthenticatedSession.establish("alice");
