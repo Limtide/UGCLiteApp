@@ -81,3 +81,11 @@
 - Fix: persist only the username carried by the successful LoginResult and fail closed if a success result has no User.
 - Concurrency guard: disable username, password, and registration controls while authentication or registration is in progress.
 - Verification: compilation covers the result-to-persistence contract; independent review checks that mutable input is no longer used after authentication.
+
+## P1-13 Restored MainActivity bypasses authentication
+
+- Root cause: MainActivity trusted Android task restoration and never checked whether the current process had completed a real login or registration.
+- Fix: add an in-memory authenticated session that is established only from a successful LoginResult and checked in MainActivity onCreate and onResume.
+- Fail-closed behavior: process death clears the session, so a restored MainActivity clears the task and redirects to LoginActivity.
+- Logout behavior: the active profile logout path clears both the process session and persisted display state.
+- Regression coverage: AuthenticatedSessionTest covers fail-closed startup, successful establishment, invalid identities, and logout.

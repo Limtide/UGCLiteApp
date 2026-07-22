@@ -12,12 +12,25 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.limtide.ugclite.R;
 import com.limtide.ugclite.ui.fragment.HomeFragment;
 import com.limtide.ugclite.ui.fragment.ProfileFragment;
+import com.limtide.ugclite.utils.AuthenticatedSession;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class MainActivityRecreationTest {
+    @Before
+    public void establishSession() {
+        AuthenticatedSession.establish("instrumented-user");
+    }
+
+    @After
+    public void clearSession() {
+        AuthenticatedSession.clear();
+    }
+
 
     @Test
     public void recreate_reusesFragmentsAndKeepsProfileVisible() {

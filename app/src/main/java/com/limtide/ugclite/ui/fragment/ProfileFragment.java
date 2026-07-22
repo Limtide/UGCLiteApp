@@ -15,6 +15,7 @@ import androidx.fragment.app.Fragment;
 import com.limtide.ugclite.databinding.FragmentProfileBinding;
 import com.limtide.ugclite.data.repository.UserRepository;
 import com.limtide.ugclite.utils.AppStartupHelper;
+import com.limtide.ugclite.utils.AuthenticatedSession;
 import com.limtide.ugclite.utils.PreferenceManager;
 import androidx.lifecycle.Observer;
 import com.limtide.ugclite.database.entity.User;
@@ -146,6 +147,7 @@ public class ProfileFragment extends Fragment {
     private void logoutCurrentUser() {
         // 清除统一的登录状态
         preferenceManager.clearLoginState();
+        AuthenticatedSession.clear();
 
         // 更新UI显示默认信息
         showDefaultUserInfo();

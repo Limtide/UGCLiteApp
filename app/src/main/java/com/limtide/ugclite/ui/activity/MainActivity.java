@@ -1,4 +1,5 @@
 package com.limtide.ugclite.ui.activity;
+import android.content.Intent;
 
 import android.os.Bundle;
 import android.util.Log;
@@ -16,6 +17,7 @@ import com.limtide.ugclite.R;
 import com.limtide.ugclite.databinding.ActivityMainBinding;
 import com.limtide.ugclite.ui.fragment.HomeFragment;
 import com.limtide.ugclite.ui.fragment.ProfileFragment;
+import com.limtide.ugclite.utils.AuthenticatedSession;
 import com.limtide.ugclite.utils.PreferenceManager;
 import com.limtide.ugclite.utils.CacheManager;
 import com.limtide.ugclite.UGCApplication;
@@ -50,6 +52,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (!ensureAuthenticated()) {
+            return;
+        }
+
 
         Log.d(TAG, "MainActivity创建");
 
@@ -280,15 +286,31 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         Log.d(TAG, "MainActivity onResume");
+        if (!ensureAuthenticated()) {
+            return;
+        }
 
         // 检查是否需要清理缓存
         checkAndCleanupCacheIfNeeded();
+    }
+
+    private boolean ensureAuthenticated() {
+        if (AuthenticatedSession.isAuthenticated()) {
+            return true;
+        }
+
+        Intent intent = new Intent(this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
+        return false;
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "MainActivity onDestroy");
+
 
         // 清理资源
         if (binding != null) {

@@ -12,6 +12,7 @@ import com.limtide.ugclite.database.entity.User;
 
 import com.limtide.ugclite.databinding.ActivityLoginBinding;
 import com.limtide.ugclite.utils.PreferenceManager;
+import com.limtide.ugclite.utils.AuthenticatedSession;
 import com.limtide.ugclite.ui.viewmodel.LoginViewModel;
 
 public class LoginActivity extends AppCompatActivity {
@@ -34,6 +35,7 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        AuthenticatedSession.clear();
         Log.d(TAG, "onCreate: Activity is being created.");
 
         // 1. 先初始化PreferenceManager
@@ -118,6 +120,7 @@ public class LoginActivity extends AppCompatActivity {
                         showError("Authentication failed");
                         return;
                     }
+                    AuthenticatedSession.establish(authenticatedUser.getUsername());
                     saveCurrentUser(authenticatedUser);
                     navigateToMain();
                 } else {
