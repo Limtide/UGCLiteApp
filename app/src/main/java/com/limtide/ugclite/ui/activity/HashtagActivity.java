@@ -3,6 +3,7 @@ package com.limtide.ugclite.ui.activity;
 import android.os.Bundle;
 
 import com.limtide.ugclite.databinding.ActivityHashtagBinding;
+import com.limtide.ugclite.utils.AuthenticationGate;
 import androidx.appcompat.app.AppCompatActivity;
 
 /**
@@ -16,6 +17,9 @@ public class HashtagActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (!AuthenticationGate.requireAuthenticated(this)) {
+            return;
+        }
         binding = ActivityHashtagBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
@@ -23,6 +27,14 @@ public class HashtagActivity extends AppCompatActivity {
         handleIntent();
     }
 
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (!AuthenticationGate.requireAuthenticated(this)) {
+            return;
+        }
+    }
     private void setupClickListeners() {
         binding.backButton.setOnClickListener(v -> finish());
     }

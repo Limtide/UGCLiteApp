@@ -89,3 +89,11 @@
 - Fail-closed behavior: process death clears the session, so a restored MainActivity clears the task and redirects to LoginActivity.
 - Logout behavior: the active profile logout path clears both the process session and persisted display state.
 - Regression coverage: AuthenticatedSessionTest covers fail-closed startup, successful establishment, invalid identities, and logout.
+
+## P1-14 Protected Activity authentication coverage
+
+- Root cause: only MainActivity checked the process session, while Android can restore PostDetailActivity or HashtagActivity directly as the task-stack top.
+- Fix: centralize the fail-closed redirect in AuthenticationGate and require it from every Manifest-registered non-login Activity during onCreate and onResume.
+- Restored-task behavior: a missing process session clears the task and redirects to LoginActivity before protected UI initialization.
+- Regression coverage: ProtectedActivityAuthenticationTest launches each protected Activity without a session and verifies it cannot remain resumed.
+- Scope check: the Manifest currently registers MainActivity, PostDetailActivity, and HashtagActivity as protected Activities; LoginActivity remains the only public entry.

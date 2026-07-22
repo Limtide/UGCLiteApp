@@ -40,6 +40,7 @@ import com.limtide.ugclite.ui.adapter.MediaPagerAdapter;
 import com.limtide.ugclite.data.model.Post;
 import com.limtide.ugclite.databinding.ActivityPostDetailBinding;
 import com.limtide.ugclite.utils.LikeManager;
+import com.limtide.ugclite.utils.AuthenticationGate;
 import com.limtide.ugclite.utils.FollowManager;
 import com.limtide.ugclite.utils.MuteManager;
 import com.limtide.ugclite.ui.component.MusicPlayer;
@@ -104,6 +105,9 @@ public class PostDetailActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (!AuthenticationGate.requireAuthenticated(this)) {
+            return;
+        }
 
         try {
             binding = ActivityPostDetailBinding.inflate(getLayoutInflater());
@@ -1130,6 +1134,9 @@ public class PostDetailActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         Log.d(TAG, "PostDetailActivity resumed - 恢复播放状态");
+        if (!AuthenticationGate.requireAuthenticated(this)) {
+            return;
+        }
 
         // 从MuteManager获取最新状态
         isMuted = muteManager.isMuted();
