@@ -69,3 +69,10 @@
 - Fix: record authentication time, enforce a 24-hour process-session TTL, and clear both memory and persisted display login state when the gate rejects access.
 - Fail-closed behavior: expired sessions are redirected to LoginActivity from every protected Activity.
 - Regression coverage: AuthenticatedSessionTest covers the TTL boundary and timestamp removal during logout.
+
+## P2-11 Feed errors replace usable cached content
+
+- Root cause: every load-more or refresh failure opened the full-screen empty-state overlay, even when the adapter still contained usable posts; the sticky error value could also display again after view recreation.
+- Fix: keep existing posts visible and show a transient Toast for non-empty feeds; reserve the full-screen error state for an empty feed.
+- Event behavior: clear the consumed error message immediately and hide the empty-state overlay whenever the ViewModel reports a non-empty state.
+- Verification: compile the Fragment and exercise both empty and populated adapter branches during final validation.

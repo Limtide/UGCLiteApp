@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -116,13 +117,21 @@ public class HomeFragment extends Fragment {
 
         feedViewModel.getErrorMessage().observe(getViewLifecycleOwner(), errorMsg -> {
             if (errorMsg != null && !errorMsg.isEmpty()) {
-                showErrorState(errorMsg);
+                if (notecardAdapter.getItemCount() > 0) {
+                    hideEmptyState();
+                    Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_SHORT).show();
+                } else {
+                    showErrorState(errorMsg);
+                }
+                feedViewModel.clearErrorMessage();
             }
         });
 
         feedViewModel.getIsEmptyState().observe(getViewLifecycleOwner(), isEmpty -> {
             if (isEmpty != null && isEmpty) {
                 showEmptyState();
+            } else {
+                hideEmptyState();
             }
         });
     }
