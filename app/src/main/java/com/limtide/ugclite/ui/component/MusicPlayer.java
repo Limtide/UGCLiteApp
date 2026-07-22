@@ -35,7 +35,7 @@ public class MusicPlayer {
         void onStop();
     }
 
-    private MusicPlayerListener listener;
+    private volatile MusicPlayerListener listener;
 
     public MusicPlayer(Context context) {
         this.context = context.getApplicationContext();
@@ -363,18 +363,23 @@ public class MusicPlayer {
      * 释放资源
      */
     public void release() {
-        if (mediaPlayer != null) {
         released = true;
         loadGeneration++;
-            if (mediaPlayer.isPlaying()) {
-                mediaPlayer.stop();
+        listener = null;
+
+        MediaPlayer player = mediaPlayer;
+        mediaPlayer = null;
+        try {
+            if (player != null) {
+                player.release();
             }
-            mediaPlayer.release();
-            mediaPlayer = null;
+        } catch (RuntimeException exception) {
+            Log.w(TAG, "释放音乐播放器时忽略无效状态", exception);
+        } finally {
+            isPrepared = false;
+            currentUrl = null;
+            startPosition = 0;
         }
-        isPrepared = false;
-        currentUrl = null;
-        startPosition = 0;
         Log.d(TAG, "释放音乐播放器资源");
     }
 }

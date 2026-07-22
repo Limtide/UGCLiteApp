@@ -50,6 +50,7 @@
 - Defensive behavior: source-loading methods capture and validate the current MediaPlayer and handle IllegalStateException as a normal playback error.
 - Verification: Java compilation validates callback capture and lifecycle guards; final review checks release invalidates all outstanding generations.
 - Lint follow-up: brace and align both released-player guards so control flow is explicit and SuspiciousIndentation cannot mask an unconditional source load.
+- Independent-review follow-up: release now clears the Activity-capturing listener before detaching the player and releases directly without isPlaying/stop calls that are illegal in MediaPlayer's Error state.
 
 ## P2-08 Manual media swipe creates inconsistent mute state
 
