@@ -34,3 +34,10 @@
 - Fix: introduce a main-thread Handler and dispatch cleanup results, errors, statistics, and Glide.clearMemory through it.
 - Lifecycle behavior: CacheManager continues retaining only the application Context and no Activity is leaked.
 - Verification: Java compilation validates every callback path and Glide main-thread invocation.
+
+## P2-06 Cache size enforcement over-deletes files
+
+- Root cause: the cleanup loop read File.length after deletion, which normally returned zero, so its remaining-size counter never decreased.
+- Fix: capture each file size before deletion, decrement the remaining size only after a successful delete, and include size-limit deletions in cleanup statistics.
+- Retention behavior: cleanup stops as soon as the configured size threshold is reached instead of deleting every candidate.
+- Verification: Java compilation validates both music and thumbnail cleanup paths; final review checks both loops use the pre-delete size.

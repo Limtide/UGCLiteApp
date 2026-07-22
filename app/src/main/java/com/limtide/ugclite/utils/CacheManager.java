@@ -182,8 +182,10 @@ public class CacheManager {
             long currentSize = getDirectorySize(musicCacheDir);
             while (currentSize > MAX_MUSIC_CACHE_SIZE && files.length > 0) {
                 File oldestFile = findOldestFile(files);
+                long oldestFileSize = oldestFile == null ? 0 : oldestFile.length();
                 if (oldestFile != null && oldestFile.delete()) {
-                    currentSize -= oldestFile.length();
+                    currentSize -= oldestFileSize;
+                    totalSize += oldestFileSize;
                     deletedCount++;
                     Log.d(TAG, "删除音乐文件以控制缓存大小: " + oldestFile.getName());
                 } else {
@@ -236,8 +238,10 @@ public class CacheManager {
             long currentSize = getThumbnailsCacheSize();
             while (currentSize > MAX_THUMBNAIL_CACHE_SIZE && files != null && files.length > 0) {
                 File oldestFile = findOldestFile(files);
+                long oldestFileSize = oldestFile == null ? 0 : oldestFile.length();
                 if (oldestFile != null && oldestFile.delete()) {
-                    currentSize -= oldestFile.length();
+                    currentSize -= oldestFileSize;
+                    totalSize += oldestFileSize;
                     deletedCount++;
                     Log.d(TAG, "删除缩略图以控制缓存大小: " + oldestFile.getName());
                 } else {
