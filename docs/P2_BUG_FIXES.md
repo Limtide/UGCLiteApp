@@ -35,6 +35,8 @@
 - Fix: introduce a main-thread Handler and dispatch cleanup results, errors, statistics, and Glide.clearMemory through it.
 - Lifecycle behavior: CacheManager continues retaining only the application Context and no Activity is leaked.
 - Verification: Java compilation validates every callback path and Glide main-thread invocation.
+- Independent-review follow-up: all cache task submissions now convert shutdown and RejectedExecutionException races into a non-throwing rejection; cleanup and statistics callbacks report that rejection through the main Handler.
+- Rejection coverage: CleanupTaskDispatcherTest covers already-shutdown, race-rejected, and accepted task submissions.
 
 ## P2-06 Cache size enforcement over-deletes files
 

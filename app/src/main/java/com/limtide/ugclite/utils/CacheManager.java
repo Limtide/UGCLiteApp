@@ -95,12 +95,12 @@ public class CacheManager {
     public void performCleanup(CleanupCallback callback) {
         if (cleanupExecutor.isShutdown()) {
             if (callback != null) {
-                callback.onError("清理线程池已关闭");
+                mainHandler.post(() -> callback.onError("清理线程池已关闭"));
             }
             return;
         }
 
-        cleanupExecutor.execute(() -> {
+        if (!executeCleanupTask(() -> {
             try {
                 Log.d(TAG, "开始执行缓存清理");
                 long startTime = System.currentTimeMillis();
@@ -144,7 +144,11 @@ public class CacheManager {
                 Log.e(TAG, "缓存清理过程中出错", e);
                 if (callback != null) mainHandler.post(() -> callback.onError(e.getMessage()));
             }
-        });
+        })) {
+            if (callback != null) {
+                mainHandler.post(() -> callback.onError("清理线程池已关闭"));
+            }
+        }
     }
 
     /**
@@ -390,7 +394,7 @@ public class CacheManager {
      * 获取缓存统计信息
      */
     public void getCacheStats(CacheStatsCallback callback) {
-        cleanupExecutor.execute(() -> {
+        if (!executeCleanupTask(() -> {
             try {
                 CacheStats stats = new CacheStats();
 
@@ -418,14 +422,18 @@ public class CacheManager {
                 Log.e(TAG, "获取缓存统计信息时出错", e);
                 if (callback != null) mainHandler.post(() -> callback.onError(e.getMessage()));
             }
-        });
+        })) {
+            if (callback != null) {
+                mainHandler.post(() -> callback.onError("清理线程池已关闭"));
+            }
+        }
     }
 
     /**
      * 强制清理所有缓存
      */
     public void forceCleanupAll() {
-        cleanupExecutor.execute(() -> {
+        if (!executeCleanupTask(() -> {
             try {
                 Log.d(TAG, "开始强制清理所有缓存");
 
@@ -446,19 +454,21 @@ public class CacheManager {
                 }
 
                 // 清理Glide缓存
-                if (context instanceof android.app.Activity) {
-                    ((android.app.Activity) context).runOnUiThread(() -> {
-                        Glide.get(context).clearMemory();
-                        Glide.get(context).clearDiskCache();
-                    });
-                }
+                mainHandler.post(() -> Glide.get(context).clearMemory());
+                Glide.get(context).clearDiskCache();
 
                 Log.d(TAG, "强制清理所有缓存完成");
 
             } catch (Exception e) {
                 Log.e(TAG, "强制清理缓存时出错", e);
             }
-        });
+        })) {
+            Log.w(TAG, "清理线程池已关闭，跳过强制清理");
+        }
+    }
+
+    private boolean executeCleanupTask(Runnable task) {
+        return CleanupTaskDispatcher.tryExecute(cleanupExecutor, task);
     }
 
     /**
