@@ -39,7 +39,13 @@ public class FeedViewModel extends AndroidViewModel {
     }
 
     private void observeFeedResult() {
+        ReplayEventGuard<FeedResult> replayGuard =
+                new ReplayEventGuard<>(feedRepository.getFeedResult().getValue());
         feedResultObserver = result -> {
+            if (!replayGuard.shouldDeliver(result)) {
+                Log.d(TAG, "????????? Feed ??");
+                return;
+            }
             if (result == null) {
                 return;
             }

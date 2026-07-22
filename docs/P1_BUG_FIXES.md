@@ -97,3 +97,11 @@
 - Restored-task behavior: a missing process session clears the task and redirects to LoginActivity before protected UI initialization.
 - Regression coverage: ProtectedActivityAuthenticationTest launches each protected Activity without a session and verifies it cannot remain resumed.
 - Scope check: the Manifest currently registers MainActivity, PostDetailActivity, and HashtagActivity as protected Activities; LoginActivity remains the only public entry.
+
+## P1-15 Replayed pagination result in a new FeedViewModel
+
+- Root cause: the singleton FeedRepository exposes event-like page results through replaying MutableLiveData, so a new ViewModel immediately received the previous ViewModel's final page.
+- Trigger: load page two or later, destroy the old Home/ViewModel in the same process, then create a new Home/ViewModel.
+- Fix: capture the value present before observation and suppress that exact replayed event; isFirstLoad therefore remains true and loadFeed forces a fresh first-page request.
+- Concurrency behavior: a newly completed request is a distinct result object and is still delivered; an active older request is followed by the already-supported queued refresh.
+- Regression coverage: ReplayEventGuardTest proves the pre-subscription object is ignored while newly published objects are delivered.
