@@ -23,15 +23,12 @@ final class FeedLoadGate {
         return Decision.REJECTED;
     }
 
-    synchronized boolean hasQueuedRefresh() {
-        return refreshQueued;
-    }
-
-    synchronized boolean completeAndShouldStartRefresh() {
+    synchronized boolean complete(Runnable publisher) {
         if (refreshQueued) {
             refreshQueued = false;
             return true;
         }
+        publisher.run();
         active = false;
         return false;
     }

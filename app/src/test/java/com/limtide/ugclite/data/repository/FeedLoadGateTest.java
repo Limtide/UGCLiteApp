@@ -6,6 +6,8 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class FeedLoadGateTest {
 
     @Test
@@ -13,26 +15,33 @@ public class FeedLoadGateTest {
         FeedLoadGate gate = new FeedLoadGate();
         assertEquals(FeedLoadGate.Decision.STARTED, gate.request(false));
         assertEquals(FeedLoadGate.Decision.REJECTED, gate.request(false));
-        assertFalse(gate.hasQueuedRefresh());
     }
 
     @Test
-    public void refreshDuringActiveRequestIsQueued() {
+    public void queuedRefreshSuppressesCompletedResult() {
         FeedLoadGate gate = new FeedLoadGate();
+        AtomicBoolean published = new AtomicBoolean();
+
         assertEquals(FeedLoadGate.Decision.STARTED, gate.request(false));
         assertEquals(FeedLoadGate.Decision.QUEUED, gate.request(true));
-        assertTrue(gate.hasQueuedRefresh());
-        assertTrue(gate.completeAndShouldStartRefresh());
+        assertTrue(gate.complete(() -> published.set(true)));
+
+        assertFalse(published.get());
         assertTrue(gate.isActive());
-        assertFalse(gate.completeAndShouldStartRefresh());
+        assertFalse(gate.complete(() -> published.set(true)));
+        assertTrue(published.get());
         assertFalse(gate.isActive());
     }
 
     @Test
-    public void completedRequestAllowsNextRequest() {
+    public void completedRequestPublishesAndAllowsNextRequest() {
         FeedLoadGate gate = new FeedLoadGate();
+        AtomicBoolean published = new AtomicBoolean();
+
         assertEquals(FeedLoadGate.Decision.STARTED, gate.request(false));
-        assertFalse(gate.completeAndShouldStartRefresh());
+        assertFalse(gate.complete(() -> published.set(true)));
+
+        assertTrue(published.get());
         assertEquals(FeedLoadGate.Decision.STARTED, gate.request(false));
     }
 }

@@ -85,3 +85,10 @@
 - Timing behavior: missing, disabled, and failed legacy-password paths execute a dummy PBKDF2 verification to reduce account-existence timing differences.
 - Regression coverage: LoginAttemptLimiterTest covers persisted lockout, device-wide protection against username rotation, account-only reset after success, opaque normalized keys, and fail-closed clock rollback.
 - Residual risk: local rate limiting can be bypassed by clearing app data or reinstalling and does not replace server-side throttling; registration still reports username conflicts as part of its existing UX.
+
+## P2-13 Queued refresh can publish a stale page
+
+- Root cause: FeedRepository checked for a queued refresh separately from posting the completed page, so a refresh arriving between those operations allowed stale content to reach observers.
+- Fix: FeedLoadGate now atomically chooses either to publish the completed result or consume the queued refresh and keep the gate active for the replacement request.
+- Ordering behavior: a refresh linearized before completion suppresses the old success or error result; a refresh arriving after publication starts as the next request.
+- Regression coverage: FeedLoadGateTest verifies stale-result suppression, active-state continuity, normal publication, and subsequent request admission.

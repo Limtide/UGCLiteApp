@@ -77,10 +77,6 @@ public class FeedRepository {
             public void onSuccess(List<Post> posts, boolean hasMore) {
                 executorService.execute(() -> {
                     try {
-                        if (loadGate.hasQueuedRefresh()) {
-                            finishRequest();
-                            return;
-                        }
                         int rawCount = posts == null ? 0 : posts.size();
                         List<Post> filteredPosts = FeedPostFilter.visiblePosts(posts);
 
@@ -101,8 +97,7 @@ public class FeedRepository {
                                 + ", visible: " + filteredPosts.size()
                                 + ", hasMore: " + hasMore
                                 + ", cursor: " + currentCursor.get());
-                        feedResult.postValue(result);
-                        finishRequest();
+                        finishRequest(() -> feedResult.postValue(result));
                     } catch (Exception e) {
                         Log.e(TAG, "处理数据时发生异常", e);
                         handleError("数据处理异常: " + e.getMessage(), refresh);
@@ -118,17 +113,13 @@ public class FeedRepository {
     }
 
 
-    private void finishRequest() {
-        if (loadGate.completeAndShouldStartRefresh()) {
+    private void finishRequest(Runnable publisher) {
+        if (loadGate.complete(publisher)) {
             executeFeedRequest(true);
         }
     }
 
     private void handleError(String errorMessage, boolean refresh) {
-        if (loadGate.hasQueuedRefresh()) {
-            finishRequest();
-            return;
-        }
         FeedResult result = new FeedResult(
                 false,
                 errorMessage,
@@ -136,8 +127,7 @@ public class FeedRepository {
                 false,
                 refresh
         );
-        feedResult.postValue(result);
-        finishRequest();
+        finishRequest(() -> feedResult.postValue(result));
         Log.e(TAG, "数据加载失败: " + errorMessage);
     }
 
