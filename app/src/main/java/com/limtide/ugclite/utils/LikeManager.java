@@ -53,7 +53,10 @@ public class LikeManager {
             throw new IllegalStateException("Application Context is not available");
         }
 
-        prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        String preferenceName = AccountPreferenceNamespace.forUser(
+                PREFS_NAME,
+                AuthenticatedSession.getAuthenticatedUsername());
+        prefs = appContext.getSharedPreferences(preferenceName, Context.MODE_PRIVATE);
         editor = prefs.edit();
         loadData();
     }

@@ -55,3 +55,10 @@
 - Fix: manual swipe writes only through MuteManager.setMuted; its existing listener synchronizes the Activity flag, icon, video players, and music player.
 - Resume behavior: the persisted manager state remains authoritative after pause and resume.
 - Verification: Java compilation validates the single-state path; final review checks no direct swipe mutation remains.
+
+## P2-09 Likes and follows leak across local accounts
+
+- Root cause: LikeManager and FollowManager used one global SharedPreferences file and retained one process-wide cache across account switches.
+- Fix: derive a non-identifying SHA-256 preference namespace from the authenticated username and reset both singleton caches whenever the authenticated identity changes or clears.
+- Privacy behavior: each account retains its own interactions without exposing them to another account on the same device.
+- Regression coverage: AccountPreferenceNamespaceTest covers stable namespaces, account separation, and removal of raw identity data from preference names.

@@ -10,7 +10,12 @@ public final class AuthenticatedSession {
         if (username == null || username.trim().isEmpty()) {
             throw new IllegalArgumentException("Authenticated username is required");
         }
-        authenticatedUsername = username.trim();
+        String normalizedUsername = username.trim();
+        if (!normalizedUsername.equals(authenticatedUsername)) {
+            LikeManager.resetInstance();
+            FollowManager.resetInstance();
+        }
+        authenticatedUsername = normalizedUsername;
     }
 
     public static boolean isAuthenticated() {
@@ -23,5 +28,7 @@ public final class AuthenticatedSession {
 
     public static void clear() {
         authenticatedUsername = null;
+        LikeManager.resetInstance();
+        FollowManager.resetInstance();
     }
 }

@@ -50,7 +50,10 @@ public class FollowManager {
             throw new IllegalStateException("Application Context is not available");
         }
 
-        prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        String preferenceName = AccountPreferenceNamespace.forUser(
+                PREFS_NAME,
+                AuthenticatedSession.getAuthenticatedUsername());
+        prefs = appContext.getSharedPreferences(preferenceName, Context.MODE_PRIVATE);
         editor = prefs.edit();
         loadData();
     }
@@ -95,7 +98,7 @@ public class FollowManager {
 
             // 加载已关注的用户ID集合
             Set<String> savedFollows = prefs.getStringSet(KEY_FOLLOWED_USERS, new HashSet<>());
-            Log.d(TAG, "Raw data from SharedPreferences: " + savedFollows.size() + " items, content: " + savedFollows);
+            Log.d(TAG, "Loaded raw follow item count: " + savedFollows.size());
 
             // 转换为ConcurrentHashMap保证线程安全
             followedUserIds = new ConcurrentHashMap<>();
