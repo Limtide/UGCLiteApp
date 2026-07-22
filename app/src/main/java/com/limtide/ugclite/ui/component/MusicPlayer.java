@@ -22,6 +22,8 @@ public class MusicPlayer {
     private String currentUrl;
     private boolean isPrepared = false;
     private int startPosition = 0;
+    private volatile boolean released;
+    private volatile long loadGeneration;
 
     // 播放状态监听器
     public interface MusicPlayerListener {
@@ -112,6 +114,10 @@ public class MusicPlayer {
      */
     public void loadMusic(String url, int seekTime, boolean enableCache) {
         Log.d(TAG, "加载音乐: " + url + ", 起始位置: " + seekTime + "ms, 缓存: " + enableCache);
+        if (released || mediaPlayer == null) {
+            Log.d(TAG, "Ignoring load request after release");
+            return;
+        }
 
         if (url == null || url.isEmpty()) {
             Log.w(TAG, "音乐URL为空");
@@ -132,6 +138,7 @@ public class MusicPlayer {
         currentUrl = url;
         startPosition = seekTime;
 
+        long requestGeneration = ++loadGeneration;
         // 如果启用缓存，先检查本地缓存
         if (enableCache) {
             String cachedPath = MusicFileUtils.getCachedMusicPath(context, url);
@@ -146,12 +153,18 @@ public class MusicPlayer {
                 @Override
                 public void onSuccess(String filePath) {
                     Log.d(TAG, "音乐缓存完成: " + filePath);
+                    if (!isCurrentRequest(url, requestGeneration)) {
+                        return;
+                    }
                     loadMusicFromPath(filePath);
                 }
 
                 @Override
                 public void onError(String error) {
                     Log.w(TAG, "音乐缓存失败，使用在线播放: " + error);
+                    if (!isCurrentRequest(url, requestGeneration)) {
+                        return;
+                    }
                     loadMusicFromUrl(url);
                 }
 
@@ -159,6 +172,9 @@ public class MusicPlayer {
                 public void onProgress(int progress) {
                     // 可以在这里添加进度回调
                     Log.d(TAG, "音乐下载进度: " + progress + "%");
+                    if (!isCurrentRequest(url, requestGeneration)) {
+                        return;
+                    }
                 }
             });
         } else {
@@ -170,12 +186,21 @@ public class MusicPlayer {
     /**
      * 从本地文件加载音乐
      */
+    private boolean isCurrentRequest(String url, long generation) {
+        return !released
+                && mediaPlayer != null
+                && generation == loadGeneration
+                && url.equals(currentUrl);
+    }
+
     private void loadMusicFromPath(String filePath) {
         try {
-            mediaPlayer.setDataSource(filePath);
-            mediaPlayer.prepareAsync();
+        MediaPlayer player = mediaPlayer;
+        if (released || player == null) return;
+            player.setDataSource(filePath);
+            player.prepareAsync();
             Log.d(TAG, "从本地文件加载音乐: " + filePath);
-        } catch (IOException e) {
+        } catch (IOException | IllegalStateException e) {
             Log.e(TAG, "设置本地音频源失败: " + e.getMessage(), e);
             if (listener != null) {
                 listener.onError("音频源设置失败: " + e.getMessage());
@@ -187,11 +212,13 @@ public class MusicPlayer {
      * 从URL加载音乐
      */
     private void loadMusicFromUrl(String url) {
+        MediaPlayer player = mediaPlayer;
+        if (released || player == null) return;
         try {
-            mediaPlayer.setDataSource(url);
-            mediaPlayer.prepareAsync();
+            player.setDataSource(url);
+            player.prepareAsync();
             Log.d(TAG, "从URL加载音乐: " + url);
-        } catch (IOException e) {
+        } catch (IOException | IllegalStateException e) {
             Log.e(TAG, "设置网络音频源失败: " + e.getMessage(), e);
             if (listener != null) {
                 listener.onError("音频源设置失败: " + e.getMessage());
@@ -333,6 +360,8 @@ public class MusicPlayer {
      */
     public void release() {
         if (mediaPlayer != null) {
+        released = true;
+        loadGeneration++;
             if (mediaPlayer.isPlaying()) {
                 mediaPlayer.stop();
             }

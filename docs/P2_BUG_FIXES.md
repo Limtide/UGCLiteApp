@@ -41,3 +41,10 @@
 - Fix: capture each file size before deletion, decrement the remaining size only after a successful delete, and include size-limit deletions in cleanup statistics.
 - Retention behavior: cleanup stops as soon as the configured size threshold is reached instead of deleting every candidate.
 - Verification: Java compilation validates both music and thumbnail cleanup paths; final review checks both loops use the pre-delete size.
+
+## P2-07 Music download callback uses a released player
+
+- Root cause: asynchronous cache callbacks retained the MusicPlayer after release and unconditionally accessed a null or released MediaPlayer.
+- Fix: add a release flag and request generation; stale success, failure, and progress callbacks are ignored after release or after another URL replaces the request.
+- Defensive behavior: source-loading methods capture and validate the current MediaPlayer and handle IllegalStateException as a normal playback error.
+- Verification: Java compilation validates callback capture and lifecycle guards; final review checks release invalidates all outstanding generations.
