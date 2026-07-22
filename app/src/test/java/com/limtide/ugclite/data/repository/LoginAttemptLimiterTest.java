@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 public class LoginAttemptLimiterTest {
@@ -21,10 +22,10 @@ public class LoginAttemptLimiterTest {
         }
 
         LoginAttemptLimiter recreated = new LoginAttemptLimiter(store, clock);
-        assertFalse(recreated.isAllowed("alice"));
+        assertFalse(recreated.isAllowed("Alice"));
 
         clock.advance(LoginAttemptLimiter.LOCK_MILLIS);
-        assertTrue(recreated.isAllowed("ALICE"));
+        assertTrue(recreated.isAllowed("Alice"));
     }
 
     @Test
@@ -56,11 +57,11 @@ public class LoginAttemptLimiterTest {
     }
 
     @Test
-    public void accountKeysAreNormalizedAndDoNotExposeUsername() {
+    public void accountKeysMatchCaseSensitiveIdentityAndDoNotExposeUsername() {
         String first = LoginAttemptLimiter.accountBucketKey(" Alice ");
         String second = LoginAttemptLimiter.accountBucketKey("alice");
 
-        assertTrue(first.equals(second));
+        assertNotEquals(first, second);
         assertFalse(first.contains("alice"));
     }
 

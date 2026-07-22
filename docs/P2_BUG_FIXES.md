@@ -83,7 +83,8 @@
 
 - Root cause: login accepted unlimited attempts and returned distinct messages for missing, disabled, and wrong-password accounts; internal exception details were also exposed to the UI.
 - Fix: persist account-level (5 attempts) and device-level (20 attempts) buckets over a 15-minute window, lock both for 15 minutes, and serialize read-modify-write operations.
-- Privacy behavior: normalize usernames and store only SHA-256 bucket keys; return one credential error for missing, disabled, and invalid-password accounts and keep exception details in logs.
+- Privacy behavior: trim usernames and store only SHA-256 bucket keys; return one credential error for missing, disabled, and invalid-password accounts and keep exception details in logs.
+- Identity behavior: retain username case in the bucket key because Room registration and lookup treat differently cased usernames as distinct accounts.
 - Timing behavior: missing, disabled, and failed legacy-password paths execute a dummy PBKDF2 verification to reduce account-existence timing differences.
 - Regression coverage: LoginAttemptLimiterTest covers persisted lockout, device-wide protection against username rotation, account-only reset after success, opaque normalized keys, and fail-closed clock rollback.
 - Residual risk: local rate limiting can be bypassed by clearing app data or reinstalling and does not replace server-side throttling; registration still reports username conflicts as part of its existing UX.

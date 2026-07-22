@@ -74,7 +74,7 @@ public final class LoginAttemptLimiter {
     }
 
     static String accountBucketKey(String username) {
-        String normalized = username.trim().toLowerCase(Locale.ROOT);
+        String normalized = username.trim();
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256")
                     .digest(normalized.getBytes(StandardCharsets.UTF_8));
