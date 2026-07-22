@@ -27,3 +27,10 @@
 - Fix: normalize a null list to an empty page, skip null posts and clips, and compute null-safe counts before publishing one success result.
 - Reliability behavior: malformed entries are discarded without failing the complete page or generating a second error event.
 - Regression coverage: FeedPostFilterTest covers null lists, null entries, supported clips, and unsupported clips.
+
+## P2-05 CacheManager callbacks and Glide memory cleanup never run
+
+- Root cause: CacheManager retained an application Context but required it to be an Activity before dispatching callbacks or clearing Glide memory; that condition was always false.
+- Fix: introduce a main-thread Handler and dispatch cleanup results, errors, statistics, and Glide.clearMemory through it.
+- Lifecycle behavior: CacheManager continues retaining only the application Context and no Activity is leaked.
+- Verification: Java compilation validates every callback path and Glide main-thread invocation.

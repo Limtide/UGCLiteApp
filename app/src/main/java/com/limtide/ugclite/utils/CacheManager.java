@@ -2,6 +2,8 @@ package com.limtide.ugclite.utils;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import com.bumptech.glide.Glide;
@@ -38,6 +40,7 @@ public class CacheManager {
 
     // 线程池用于异步清理
     private final ExecutorService cleanupExecutor = Executors.newSingleThreadExecutor();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private CacheManager(Context context) {
         this.context = context.getApplicationContext();
@@ -135,19 +138,11 @@ public class CacheManager {
                 Log.d(TAG, "缓存清理完成: " + result.toString());
 
                 // 在主线程回调
-                if (callback != null) {
-                    if (context instanceof android.app.Activity) {
-                        ((android.app.Activity) context).runOnUiThread(() -> callback.onSuccess(result));
-                    }
-                }
+                if (callback != null) mainHandler.post(() -> callback.onSuccess(result));
 
             } catch (Exception e) {
                 Log.e(TAG, "缓存清理过程中出错", e);
-                if (callback != null) {
-                    if (context instanceof android.app.Activity) {
-                        ((android.app.Activity) context).runOnUiThread(() -> callback.onError(e.getMessage()));
-                    }
-                }
+                if (callback != null) mainHandler.post(() -> callback.onError(e.getMessage()));
             }
         });
     }
@@ -266,11 +261,7 @@ public class CacheManager {
     private void cleanupGlideMemoryCache() {
         try {
             // 在主线程清理Glide内存缓存
-            if (context instanceof android.app.Activity) {
-                ((android.app.Activity) context).runOnUiThread(() -> {
-                    Glide.get(context).clearMemory();
-                });
-            }
+            mainHandler.post(() -> Glide.get(context).clearMemory());
             Log.d(TAG, "Glide内存缓存已清理");
         } catch (Exception e) {
             Log.w(TAG, "清理Glide内存缓存时出错", e);
@@ -417,15 +408,11 @@ public class CacheManager {
 
                 stats.totalCacheSize = stats.musicCacheSize + stats.thumbnailCacheSize + stats.tempCacheSize;
 
-                if (callback != null && context instanceof android.app.Activity) {
-                    ((android.app.Activity) context).runOnUiThread(() -> callback.onStatsReady(stats));
-                }
+                if (callback != null) mainHandler.post(() -> callback.onStatsReady(stats));
 
             } catch (Exception e) {
                 Log.e(TAG, "获取缓存统计信息时出错", e);
-                if (callback != null && context instanceof android.app.Activity) {
-                    ((android.app.Activity) context).runOnUiThread(() -> callback.onError(e.getMessage()));
-                }
+                if (callback != null) mainHandler.post(() -> callback.onError(e.getMessage()));
             }
         });
     }
