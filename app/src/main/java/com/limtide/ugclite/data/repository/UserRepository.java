@@ -1,6 +1,7 @@
 package com.limtide.ugclite.data.repository;
 
 import android.app.Application;
+import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -19,11 +20,17 @@ import java.util.concurrent.Executors;
  * 处理用户相关的业务逻辑和数据操作
  */
 public class UserRepository {
+    private static final String TAG = "UserRepository";
+    private static final String INVALID_CREDENTIALS = "用户名或密码错误";
+    private static final String TOO_MANY_ATTEMPTS = "登录尝试过多，请稍后再试";
+    private static final String DUMMY_PASSWORD_HASH = "pbkdf2_sha1$120000$"
+            + "000102030405060708090a0b0c0d0e0f$cb00d3e02c8b7f0cc5d41439d06828fb65e511644aabf4943b2fedf91992e805";
 
     private final UserDao userDao;
     private final LiveData<List<User>> allActiveUsers;
     private final ExecutorService executorService;
     private final PasswordHasher passwordHasher;
+    private final LoginAttemptLimiter loginAttemptLimiter;
 
     // 登录状态LiveData
     private final MutableLiveData<LoginResult> loginResult = new MutableLiveData<>();
@@ -34,6 +41,7 @@ public class UserRepository {
         allActiveUsers = userDao.getAllActiveUsers();
         executorService = Executors.newSingleThreadExecutor();
         passwordHasher = new PasswordHasher();
+        loginAttemptLimiter = new LoginAttemptLimiter(application);
     }
 
 
@@ -47,39 +55,50 @@ public class UserRepository {
                     loginResult.postValue(new LoginResult(false, "用户名不能为空", null));
                     return;
                 }
-
                 if (password == null || password.trim().isEmpty()) {
                     loginResult.postValue(new LoginResult(false, "密码不能为空", null));
                     return;
                 }
 
-                User user = userDao.getUserByUsername(username.trim());
-                if (user == null) {
-                    loginResult.postValue(new LoginResult(false, "用户不存在", null));
+                String normalizedUsername = username.trim();
+                if (!loginAttemptLimiter.isAllowed(normalizedUsername)) {
+                    loginResult.postValue(new LoginResult(false, TOO_MANY_ATTEMPTS, null));
                     return;
                 }
-                if (!user.isActive()) {
-                    loginResult.postValue(new LoginResult(false, "账号已停用", null));
+
+                User user = userDao.getUserByUsername(normalizedUsername);
+                if (user == null || !user.isActive()) {
+                    passwordHasher.verify(password, DUMMY_PASSWORD_HASH);
+                    rejectInvalidCredentials(normalizedUsername);
                     return;
                 }
+
                 if (passwordHasher.isLegacyMd5(user.getPassword())) {
                     if (!passwordHasher.verifyLegacyMd5(password, user.getPassword())) {
-                        loginResult.postValue(new LoginResult(false, "密码错误", null));
+                        passwordHasher.verify(password, DUMMY_PASSWORD_HASH);
+                        rejectInvalidCredentials(normalizedUsername);
                         return;
                     }
                     user.setPassword(passwordHasher.hash(password));
                 } else if (!passwordHasher.verify(password, user.getPassword())) {
-                    loginResult.postValue(new LoginResult(false, "密码错误", null));
+                    rejectInvalidCredentials(normalizedUsername);
                     return;
                 }
 
+                loginAttemptLimiter.recordSuccess(normalizedUsername);
                 user.updateLastLoginTime();
                 userDao.updateUser(user);
                 loginResult.postValue(new LoginResult(true, "登录成功", user));
             } catch (Exception e) {
-                loginResult.postValue(new LoginResult(false, "登录失败：" + e.getMessage(), null));
+                Log.e(TAG, "Login failed", e);
+                loginResult.postValue(new LoginResult(false, "登录失败，请稍后重试", null));
             }
         });
+    }
+
+    private void rejectInvalidCredentials(String username) {
+        loginAttemptLimiter.recordFailure(username);
+        loginResult.postValue(new LoginResult(false, INVALID_CREDENTIALS, null));
     }
 
     /**

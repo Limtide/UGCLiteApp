@@ -76,3 +76,12 @@
 - Fix: keep existing posts visible and show a transient Toast for non-empty feeds; reserve the full-screen error state for an empty feed.
 - Event behavior: clear the consumed error message immediately and hide the empty-state overlay whenever the ViewModel reports a non-empty state.
 - Verification: compile the Fragment and exercise both empty and populated adapter branches during final validation.
+
+## P2-12 Unlimited credential guessing and account enumeration
+
+- Root cause: login accepted unlimited attempts and returned distinct messages for missing, disabled, and wrong-password accounts; internal exception details were also exposed to the UI.
+- Fix: persist account-level (5 attempts) and device-level (20 attempts) buckets over a 15-minute window, lock both for 15 minutes, and serialize read-modify-write operations.
+- Privacy behavior: normalize usernames and store only SHA-256 bucket keys; return one credential error for missing, disabled, and invalid-password accounts and keep exception details in logs.
+- Timing behavior: missing, disabled, and failed legacy-password paths execute a dummy PBKDF2 verification to reduce account-existence timing differences.
+- Regression coverage: LoginAttemptLimiterTest covers persisted lockout, device-wide protection against username rotation, account-only reset after success, opaque normalized keys, and fail-closed clock rollback.
+- Residual risk: local rate limiting can be bypassed by clearing app data or reinstalling and does not replace server-side throttling; registration still reports username conflicts as part of its existing UX.
